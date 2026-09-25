@@ -337,7 +337,7 @@ async function exportJson() {
   try {
     const next = { ...book, lastBackupAt: new Date().toISOString() };
     writeBook(next);
-    const result = await saveFile(`二姐小金库_完整备份_${todayLocal()}.json`, JSON.stringify(book, null, 2), 'application/json;charset=utf-8');
+    const result = await saveFile(`二姐小金库_完整备份_${todayLocal()}.json`, JSON.stringify(book, null, 2), 'application/json');
     showToast(result === 'cancelled' ? '已取消分享；账本还没有完成备份' : '备份文件已交给系统，请在手机“文件”中确认保存');
   } catch (error) { showToast(`备份失败：${error.message}`); }
 }
@@ -384,7 +384,7 @@ async function exportCsv() {
     entry.note, entry.voidedAt ? '已作废' : '有效', entry.createdAt, entry.voidedAt ?? '', entry.id,
   ])];
   try {
-    const result = await saveFile(`二姐小金库_明细_${todayLocal()}.csv`, `\uFEFF${lines.map(row => row.map(csvCell).join(',')).join('\r\n')}`, 'text/csv;charset=utf-8');
+    const result = await saveFile(`二姐小金库_明细_${todayLocal()}.csv`, `\uFEFF${lines.map(row => row.map(csvCell).join(',')).join('\r\n')}`, 'text/csv');
     showToast(result === 'cancelled' ? '已取消分享明细表' : '明细表已交给系统；恢复账本请使用 JSON 完整备份');
   } catch (error) { showToast(`明细表导出失败：${error.message}`); }
 }
