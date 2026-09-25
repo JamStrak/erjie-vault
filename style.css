@@ -80,6 +80,9 @@ h2 { font-size: 20px; margin-bottom: 0; letter-spacing: -.04em; }
 .position-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
 .position-card { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; min-height: 122px; padding: 13px 13px 11px; border: 1px solid var(--line); border-radius: 19px; background: #fff; box-shadow: var(--shadow); }
 .position-card.debt { border-color: #f2d9c9; background: #fff6ee; }
+.position-card.is-negative { border-color: #eac8b9; background: #fff8f2; }
+.position-card.is-negative strong { color: #ad5847; }
+.position-card.is-negative .position-symbol { background: #fbe7dd; color: #b56c54; }
 .position-symbol { display: grid; place-items: center; width: 27px; height: 27px; margin-bottom: 7px; border-radius: 9px; font-size: 16px; font-weight: 700; }
 .position-symbol.teal { background: #e3f2f2; color: #387681; }
 .position-symbol.mint { background: #e8f4e6; color: #5c8465; }
@@ -89,8 +92,29 @@ h2 { font-size: 20px; margin-bottom: 0; letter-spacing: -.04em; }
 .position-card strong { margin-top: 4px; color: var(--ink); font-size: clamp(16px, 4.5vw, 23px); letter-spacing: -.045em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .position-card.debt strong { color: #a96145; }
 .position-card small { margin-top: auto; padding-top: 5px; color: var(--muted); font-size: 9px; }
+#cash-caption { font-size: 10px; line-height: 1.35; }
 .card-link { margin-top: auto; padding: 5px 0 0; border: 0; background: transparent; color: #4c8390; font-size: 10px; font-weight: 750; text-align: left; }
 .position-card.debt .card-link { color: #a96b4e; }
+.funding-alert { display: flex; align-items: center; gap: 15px; width: 100%; margin: 0 0 14px; padding: 17px 18px; border: 1px solid #eabca8; border-radius: 20px; background: linear-gradient(120deg, #fff1e7 0%, #fff8ee 80%); color: #713c2f; text-align: left; box-shadow: 0 8px 22px rgba(157, 88, 63, .09); }
+.funding-alert:active { transform: translateY(1px); }
+.funding-alert-icon { display: grid; flex: 0 0 31px; place-items: center; width: 31px; height: 31px; border-radius: 10px; background: #fff; color: #a65940; font-size: 17px; font-weight: 900; box-shadow: 0 2px 8px rgba(128, 71, 49, .08); }
+.funding-alert-copy, .funding-alert .alert-copy { flex: 1; min-width: 0; }
+.funding-alert > span:last-child { flex: 0 0 auto; color: #a65940; font-size: 21px; line-height: 1; }
+.funding-alert .alert-eyebrow { display: block; margin-bottom: 5px; color: #a65d43; font-size: 10px; font-weight: 850; letter-spacing: .1em; }
+.funding-alert .alert-title, .funding-alert strong { display: block; color: #793d2c; font-size: clamp(15px, 4.4vw, 19px); line-height: 1.3; overflow-wrap: anywhere; }
+.funding-alert .alert-detail, .funding-alert small { display: block; margin-top: 5px; color: #916451; font-size: 11px; line-height: 1.5; }
+.funding-alert .alert-action { display: grid; flex: 0 0 32px; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: #fff; color: #a4583e; font-size: 19px; font-weight: 700; box-shadow: 0 2px 8px rgba(128, 71, 49, .09); }
+.funding-alert.is-confirmed { border-color: #d5e5e1; background: linear-gradient(120deg, #eef7f4, #f8faf2); color: #356d6b; box-shadow: var(--shadow); }
+.funding-alert.is-confirmed .alert-title, .funding-alert.is-confirmed strong { color: #326a68; }
+.funding-alert.is-confirmed .alert-detail, .funding-alert.is-confirmed small { color: #5d807d; }
+.funding-alert.is-confirmed .alert-action { color: #398080; }
+.supplier-debt { border-color: #ead8ca; background: #fff9f2; }
+.supplier-debt strong { color: #a55b43; }
+.supplier-debt-card { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 65px; padding: 12px 17px; margin: 0 0 14px; border-color: #ead8ca; background: #fff9f2; }
+.supplier-debt-card > div { min-width: 0; }
+.supplier-debt-card span { display: block; color: #926451; font-size: 11px; font-weight: 700; }
+.supplier-debt-card strong { display: block; margin-top: 3px; color: #9f5840; font-size: 19px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.supplier-debt-card .text-link { flex: 0 0 auto; color: #a45e42; }
 .partner-panel, .reconciliation-panel { padding: 19px; margin-bottom: 14px; }
 .panel-intro { margin: 10px 0 14px; color: var(--muted); font-size: 11px; line-height: 1.5; }
 .partner-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
@@ -107,6 +131,9 @@ h2 { font-size: 20px; margin-bottom: 0; letter-spacing: -.04em; }
 .planning-debt { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 15px; padding: 12px 13px; border: 1px solid #f2d9c6; border-radius: 13px; background: #fff4eb; }
 .planning-debt span { color: #98634a; font-size: 11px; font-weight: 700; }
 .planning-debt strong { color: #a65b3e; font-size: 19px; font-variant-numeric: tabular-nums; }
+#plan-supplier-row { margin-top: 8px; border-color: #e7dfd2; background: #fffbf4; }
+#plan-supplier-row span { color: #8b6c55; }
+#plan-supplier-row strong { color: #8e624c; }
 .reconciliation-line { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); color: #648080; font-size: 12px; }
 .reconciliation-line:first-of-type { margin-top: 11px; }
 .reconciliation-line strong { color: #2f5358; font-size: 13px; font-variant-numeric: tabular-nums; }
@@ -166,6 +193,9 @@ h2 { font-size: 20px; margin-bottom: 0; letter-spacing: -.04em; }
 .entry-meta, .entry-note { margin-top: 5px; font-size: 10px; line-height: 1.45; color: var(--muted); }
 .entry-note { color: #4f686b; overflow-wrap: anywhere; }
 .void-button { margin-top: 7px; padding: 3px 0; border: 0; background: none; color: #a8796a; font-size: 10px; }
+.funding-chip { display: inline-flex; align-items: center; width: fit-content; margin-top: 7px; padding: 5px 8px; border: 1px solid #edc8b4; border-radius: 100px; background: #fff3e9; color: #a55b41; font-size: 10px; font-weight: 800; line-height: 1.25; font-variant-numeric: tabular-nums; }
+.review-entry-button { display: block; width: fit-content; min-height: 32px; margin-top: 6px; padding: 6px 10px; border: 0; border-radius: 9px; background: #a85e46; color: #fff; font-size: 11px; font-weight: 800; }
+.review-entry-button:active { transform: translateY(1px); }
 .empty-state { text-align: center; padding: 28px 15px; background: #fff; border: 1px dashed #d6e4e0; border-radius: 18px; color: var(--muted); font-size: 12px; line-height: 1.7; }
 .empty-state b { display: block; font-family: Georgia, serif; font-size: 29px; font-weight: 400; color: #85aea9; margin-bottom: 4px; }
 .page-lead { padding: 16px 3px 21px; }
@@ -189,12 +219,14 @@ h2 { font-size: 20px; margin-bottom: 0; letter-spacing: -.04em; }
 .choice-stack span { line-height: 1.4; }
 .input-group { margin-top: 19px; }
 .input-group label span { font-weight: 400; color: var(--muted); }
-.input-group input, .input-group select, #entry-source, #entry-target-person, #entry-person, #sale-cost-sale { display: block; width: 100%; min-height: 45px; border: 1px solid #dce9e6; border-radius: 12px; background: #fff; color: var(--ink); padding: 9px 12px; font-size: 14px; }
+.input-group input, .input-group select, #entry-source, #entry-target-person, #entry-person, #sale-cost-sale, #supplier-payment-credit, #supplier-payment-source { display: block; width: 100%; min-height: 45px; border: 1px solid #dce9e6; border-radius: 12px; background: #fff; color: var(--ink); padding: 9px 12px; font-size: 14px; }
 .input-group input:disabled { background: #f2f5f3; color: #95aaa8; }
 .cost-button { display: block; margin-top: 8px; padding: 6px 9px; border: 0; border-radius: 9px; background: #fff1e6; color: #9c623d; font-size: 10px; font-weight: 780; text-align: left; }
 .confirm-row { display: flex; align-items: flex-start; gap: 9px; margin-top: 13px; padding: 11px; background: #fff7eb; border-radius: 12px; color: #78593f; line-height: 1.55; font-size: 11px; }
 .confirm-row input { margin-top: 1px; }
 .field-help { color: var(--muted); font-size: 11px; line-height: 1.55; margin: 7px 0 0; }
+.shortfall-hint { margin-top: 13px; padding: 10px 12px; border: 1px solid #f0c9b7; border-radius: 11px; background: #fff6ee; color: #91543d; font-weight: 680; }
+.shortfall-hint::before { content: "!"; display: inline-grid; place-items: center; width: 17px; height: 17px; margin-right: 6px; border-radius: 50%; background: #f4dbc9; color: #9c583d; font-size: 11px; font-weight: 850; }
 .form-hint { font-size: 11px; line-height: 1.6; color: #4f7d79; background: #eef7f3; border-radius: 12px; padding: 10px 12px; margin: 19px 0; }
 .primary-button { display: block; width: 100%; min-height: 49px; border: 0; border-radius: 14px; background: #397e88; color: white; font-weight: 780; font-size: 14px; box-shadow: 0 7px 15px rgba(48,119,123,.17); }
 .primary-button:active { transform: translateY(1px); }
@@ -202,6 +234,25 @@ h2 { font-size: 20px; margin-bottom: 0; letter-spacing: -.04em; }
 .history-summary span { font-size: 12px; color: var(--muted); }
 .history-summary strong { font-size: 23px; }
 .history-summary small { flex-basis: 100%; font-size: 10px; color: var(--muted); }
+.review-summary { display: flex; align-items: baseline; flex-wrap: wrap; gap: 7px 10px; padding: 16px 18px; margin-bottom: 16px; border-color: #efcbb9; background: linear-gradient(110deg, #fff2e9, #fffaf3); }
+.review-summary span { flex: 1 1 auto; color: #935f4a; font-size: 12px; font-weight: 760; }
+.review-summary strong { color: #954d35; font-size: clamp(23px, 7vw, 30px); line-height: 1.15; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.review-summary small { flex-basis: 100%; color: #986d58; font-size: 11px; }
+.review-list { display: grid; gap: 10px; margin-bottom: 14px; }
+.review-case, .review-item { min-width: 0; padding: 15px 17px; border: 1px solid #eadfd3; border-radius: 18px; background: #fff; box-shadow: var(--shadow); }
+.review-case.is-selected, .review-item.is-selected { border-color: #d99173; background: #fffbf7; }
+.review-case-top, .review-case-title, .review-item-title { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; color: var(--ink); font-size: 13px; font-weight: 790; }
+.review-case-top strong, .review-case-title strong, .review-item-title strong { color: #a5573e; font-size: 17px; font-variant-numeric: tabular-nums; text-align: right; overflow-wrap: anywhere; }
+.review-case p { margin: 8px 0 4px; color: #557175; font-size: 11px; line-height: 1.55; overflow-wrap: anywhere; }
+.review-case small { display: block; color: var(--muted); font-size: 10px; line-height: 1.5; overflow-wrap: anywhere; }
+.review-case-meta, .review-item-meta { display: block; margin-top: 6px; color: var(--muted); font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
+.review-case button, .review-item button { min-height: 35px; margin-top: 11px; padding: 7px 11px; border: 0; border-radius: 10px; background: #fff0e7; color: #985339; font-size: 11px; font-weight: 800; }
+.review-case .review-entry-button { background: #a85e46; color: #fff; }
+#review-form { margin-top: 13px; margin-bottom: 12px; scroll-margin-top: 14px; }
+#review-form h2 { font-size: 19px; }
+#review-form .field-label { margin-top: 18px; }
+#review-form input:not([type="checkbox"]), #review-form select { font-size: 16px; }
+#review-form .form-hint { margin-bottom: 14px; }
 .filter-label { display: block; color: var(--muted); font-size: 11px; margin-bottom: 6px; }
 .filter-select { width: 100%; min-height: 45px; border-radius: 12px; border: 1px solid var(--line); background: #fff; padding: 8px 12px; color: var(--ink); margin-bottom: 15px; }
 .full-list { gap: 10px; }
@@ -230,6 +281,12 @@ h2 { font-size: 20px; margin-bottom: 0; letter-spacing: -.04em; }
 @media (max-width: 380px) {
   .app-shell { padding-left: 14px; padding-right: 14px; }
   .funding-panel, .planning-panel, .entry-form { padding: 17px; }
+  .funding-alert { gap: 10px; padding: 14px; }
+  .funding-alert-icon { flex-basis: 27px; width: 27px; height: 27px; }
+  .supplier-debt-card { padding: 11px 13px; }
+  .supplier-debt-card .text-link { font-size: 11px; }
+  .review-case, .review-item { padding: 13px; }
+  .review-case-top, .review-case-title, .review-item-title { align-items: start; }
   .action-card { padding-left: 9px; }
   .action-card strong { font-size: 11px; }
   .action-card small { font-size: 8px; }
