@@ -1063,7 +1063,7 @@ html:not([data-theme="berry"]) { background: #e7ecdf; }
   color: var(--gold);
 }
 
-/* 主卡用玉绿承载经营数据；负数另加杏色底和栗铜字。 */
+/* 主卡用玉绿承载经营数据；回本金额与其他皮肤保持相同排版。 */
 :root:not([data-theme="berry"]) .recovery-card {
   border-color: var(--berry-deep);
   background: var(--berry);
@@ -1081,14 +1081,6 @@ html:not([data-theme="berry"]) { background: #e7ecdf; }
   color: var(--berry-deep);
 }
 :root:not([data-theme="berry"]) .recovery-status.negative {
-  background: var(--negative-soft);
-  color: var(--negative);
-}
-:root:not([data-theme="berry"]) .recovery-number.negative {
-  width: fit-content;
-  max-width: 100%;
-  padding: 5px 12px 8px;
-  border-radius: 15px;
   background: var(--negative-soft);
   color: var(--negative);
 }
