@@ -1,13 +1,13 @@
 {
   "id": "./",
-  "name": "二姐小金库",
+  "name": "二姐杂货铺 · 小金库",
   "short_name": "二姐小金库",
   "description": "二姐杂货铺的双人合伙账本",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f7faf8",
-  "theme_color": "#f7faf8",
+  "background_color": "#fff5e5",
+  "theme_color": "#fff5e5",
   "icons": [
     { "src": "./icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
     { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }

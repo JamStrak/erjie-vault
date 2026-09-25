@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#f7faf8">
+  <meta name="theme-color" content="#fff5e5">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="二姐小金库">
@@ -12,14 +12,14 @@
   <link rel="apple-touch-icon" href="./icon.png">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="stylesheet" href="./style.css">
-  <title>二姐小金库</title>
+  <title>二姐杂货铺 · 小金库</title>
 </head>
 <body>
   <div class="app-shell">
     <header class="topbar">
       <div class="brand-lockup" aria-label="二姐杂货铺小金库">
-        <span class="brand-mark" aria-hidden="true">₂</span>
-        <span><strong>二姐小金库</strong><small>把每一笔，都记得明明白白</small></span>
+        <span class="brand-mark" aria-hidden="true"><img src="./icon.svg" alt=""></span>
+        <span><strong>二姐杂货铺</strong><small>小金库 · 两个人的摊位账本</small></span>
       </div>
       <button class="top-icon" id="quick-backup" type="button" aria-label="导出完整备份" title="导出完整备份">
         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M4 16.5v2A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5v-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -31,12 +31,22 @@
     <main>
       <section class="screen is-active" id="screen-home" aria-labelledby="home-heading">
         <div class="intro-row">
-          <div><p class="eyebrow">二姐杂货铺 · 合伙经营账</p><h1 id="home-heading">这门生意，现在怎么样？</h1></div>
-          <span class="little-spark" aria-hidden="true">✳</span>
+          <div><p class="eyebrow">二姐的小账本 · 每一笔都明白</p><h1 id="home-heading">小铺子的账，一眼看明白</h1></div>
+          <span class="little-spark" aria-hidden="true">✿</span>
         </div>
         <button id="funding-alert" type="button" class="funding-alert" data-nav="review" hidden>
           <span class="funding-alert-icon" aria-hidden="true">!</span><span class="funding-alert-copy"><strong id="funding-alert-title">有付款待核实</strong><small id="funding-alert-detail">逐笔确认是谁垫付或欠了谁的钱</small></span><span aria-hidden="true">→</span>
         </button>
+
+        <article class="recovery-card" aria-labelledby="recovery-heading">
+          <div class="recovery-top">
+            <div><span class="recovery-eyebrow">算上全部进货</span><h2 id="recovery-heading">整摊回本差额</h2></div>
+            <span class="recovery-status" id="recovery-status">尚无流水</span>
+          </div>
+          <strong class="recovery-number" id="recovery-balance">¥0.00</strong>
+          <p class="recovery-caption" id="recovery-caption">经营收入还没有可核算的记录。</p>
+          <p class="recovery-note">这里会扣除全部净进货成本（含未售和报损的商品）及其他经营费用。合伙人入金不算收入；差额也不表示已返还出资或销售款已进入金库。</p>
+        </article>
 
         <article class="profit-card" aria-label="累计经营盈亏">
           <div class="profit-top"><span>累计经营盈亏</span><span class="profit-status" id="profit-status">已核算</span></div>
@@ -51,17 +61,7 @@
           <button id="pending-cost-action" type="button" class="profit-action" data-nav="history" data-history-filter="pending_cost" hidden>有销售还没补成本，去补录 →</button>
         </article>
 
-        <article class="recovery-card" aria-labelledby="recovery-heading">
-          <div class="recovery-top">
-            <div><span class="recovery-eyebrow">算上全部进货</span><h2 id="recovery-heading">整摊回本差额</h2></div>
-            <span class="recovery-status" id="recovery-status">尚无流水</span>
-          </div>
-          <strong class="recovery-number" id="recovery-balance">¥0.00</strong>
-          <p class="recovery-caption" id="recovery-caption">经营收入还没有可核算的记录。</p>
-          <p class="recovery-note">这里会扣除全部净进货成本（含未售和报损的商品）及其他经营费用。合伙人入金不算收入；差额也不表示已返还出资或销售款已进入金库。</p>
-        </article>
-
-        <div class="section-heading finance-heading"><div><p class="eyebrow">MONEY & STOCK</p><h2>钱和货，现在在哪？</h2></div></div>
+        <div class="section-heading finance-heading"><div><p class="eyebrow">01 · 钱和货</p><h2>钱和货，现在在哪？</h2></div></div>
         <div class="position-grid" aria-label="现金、库存与待结算">
           <article class="position-card"><span class="position-symbol teal">¥</span><span id="cash-label">金库账面余额</span><strong id="cash-balance">¥0.00</strong><small id="cash-caption">实际进出金库后剩余的钱</small></article>
           <article class="position-card debt"><span class="position-symbol coral">↘</span><span>垫付待报销</span><strong id="payable-total">¥0.00</strong><button type="button" class="card-link" data-entry-kind="reimbursement">记报销 →</button></article>
@@ -72,7 +72,7 @@
         <article id="supplier-debt-card" class="panel supplier-debt-card" hidden><div><span>欠供应商待付</span><strong id="supplier-debt-total">¥0.00</strong></div><button type="button" class="text-link" data-entry-kind="supplier_payment">记还款 →</button></article>
 
         <article class="panel partner-panel">
-          <div class="panel-heading"><div><p class="eyebrow">TWO PARTNERS · 一笔笔分开算</p><h2>两个人各投了多少？</h2></div><span class="panel-flower" aria-hidden="true">✿</span></div>
+          <div class="panel-heading"><div><p class="eyebrow">02 · 合伙人的账</p><h2>两个人各投了多少？</h2></div><span class="panel-flower" aria-hidden="true">✿</span></div>
           <p class="panel-intro">出资和待报销垫付分开记；合计只包含各自尚在店里的这两笔钱。</p>
           <div class="partner-grid">
             <div class="partner-card"><span class="partner-name" id="me-label">我</span><span class="partner-total-label">出资＋待报销</span><strong class="partner-total" id="me-exposure">¥0.00</strong><div class="partner-line"><span>正式净出资</span><b id="me-capital">¥0.00</b></div><div class="partner-line"><span>垫付待报销</span><b id="me-payable">¥0.00</b></div></div>
@@ -82,7 +82,7 @@
         </article>
 
         <article class="panel planning-panel">
-          <div class="panel-heading"><div><p class="eyebrow">NEXT PURCHASE · 资金计划</p><h2>下次进货要补多少？</h2></div><span class="status-pill" id="funding-status">够用</span></div>
+          <div class="panel-heading"><div><p class="eyebrow">03 · 下次出摊</p><h2>下次进货要补多少？</h2></div><span class="status-pill" id="funding-status">够用</span></div>
           <div class="planning-debt"><span>已垫付、尚未报销</span><strong id="plan-payable-total">¥0.00</strong></div>
           <div class="planning-debt" id="plan-supplier-row" hidden><span>欠供应商、尚未付款</span><strong id="plan-supplier-total">¥0.00</strong></div>
           <p class="planning-explain" id="funding-explain">先填下次计划进货和希望保留的备用金，账本就能帮你算。</p>
@@ -90,28 +90,30 @@
           <button class="text-link" type="button" data-nav="settings">设置进货计划与备用金 <span aria-hidden="true">→</span></button>
         </article>
 
-        <article class="panel reconciliation-panel">
-          <div class="panel-heading"><div><p class="eyebrow">BUSINESS FLOW</p><h2>流水怎么变成盈亏</h2></div></div>
-          <div class="reconciliation-line"><span>净进货成本（扣退货）</span><strong id="purchase-total">¥0.00</strong></div>
-          <div class="reconciliation-line"><span>其中已售商品成本</span><strong id="sold-cost-repeat">¥0.00</strong></div>
-          <div class="reconciliation-line"><span>其他经营费用与报损</span><strong id="expense-total">¥0.00</strong></div>
-          <div class="reconciliation-line"><span>其他经营收入</span><strong id="other-income-total">¥0.00</strong></div>
-          <p>进货先变成库存；卖出时才从库存转成成本。报销垫付和合伙人入金只改变钱的位置，不改变盈亏。</p>
-        </article>
+        <details class="panel reconciliation-panel">
+          <summary><span><small class="eyebrow">04 · 账是怎么算的</small><strong>流水怎么变成盈亏</strong></span><span aria-hidden="true">＋</span></summary>
+          <div class="reconciliation-body">
+            <div class="reconciliation-line"><span>净进货成本（扣退货）</span><strong id="purchase-total">¥0.00</strong></div>
+            <div class="reconciliation-line"><span>其中已售商品成本</span><strong id="sold-cost-repeat">¥0.00</strong></div>
+            <div class="reconciliation-line"><span>其他经营费用与报损</span><strong id="expense-total">¥0.00</strong></div>
+            <div class="reconciliation-line"><span>其他经营收入</span><strong id="other-income-total">¥0.00</strong></div>
+            <p>进货先变成库存；卖出时才从库存转成成本。报销垫付和合伙人入金只改变钱的位置，不改变盈亏。</p>
+          </div>
+        </details>
 
-        <div class="section-heading"><div><p class="eyebrow">QUICK ENTRY</p><h2>记下一笔</h2></div></div>
+        <div class="section-heading"><div><p class="eyebrow">顺手记下来</p><h2>记下一笔</h2></div></div>
         <div class="action-grid">
           <button type="button" class="action-card deposit" data-entry-kind="deposit"><span class="action-symbol">＋</span><strong>合伙人入金</strong><small>谁实际存了钱</small></button>
           <button type="button" class="action-card purchase" data-entry-kind="purchase"><span class="action-symbol">⌁</span><strong>进货入库</strong><small>记成本和谁付款</small></button>
           <button type="button" class="action-card sale" data-entry-kind="sale"><span class="action-symbol">↗</span><strong>销售记录</strong><small>收款去向记清楚</small></button>
         </div>
 
-        <div class="section-heading recent-heading"><div><p class="eyebrow">RECENT ACTIVITY</p><h2>最近记录</h2></div><button class="text-link" type="button" data-nav="history">查看全部 →</button></div>
+        <div class="section-heading recent-heading"><div><p class="eyebrow">翻翻小账本</p><h2>最近记录</h2></div><button class="text-link" type="button" data-nav="history">查看全部 →</button></div>
         <div id="recent-list" class="entry-list"></div>
       </section>
 
       <section class="screen" id="screen-entry" aria-labelledby="entry-heading" hidden>
-        <div class="page-lead"><p class="eyebrow">A LITTLE BIT, EVERY DAY</p><h1 id="entry-heading">记下一笔</h1><p>选择发生了什么，照着提示填；盈亏和两人的钱会自动更新。</p></div>
+        <div class="page-lead"><p class="eyebrow">每天一点点，账本清清楚楚</p><h1 id="entry-heading">记下一笔</h1><p>选择发生了什么，照着提示填；盈亏和两人的钱会自动更新。</p></div>
         <div class="kind-tabs" role="group" aria-label="记账类型">
           <button type="button" data-kind="deposit" class="kind-tab is-selected">入金</button>
           <button type="button" data-kind="purchase" class="kind-tab">进货</button>
@@ -167,7 +169,8 @@
       </section>
 
       <section class="screen" id="screen-review" aria-labelledby="review-heading" hidden>
-        <div class="page-lead"><p class="eyebrow">ONE BY ONE · 逐笔核对</p><h1 id="review-heading">待核实付款</h1><p>当记下金库付款时余额不够，这笔仍然保存。这里确认差额由谁承担；后续入金不会自动抹去待核实记录。</p></div>
+        <div class="page-lead"><p class="eyebrow">一笔一笔，慢慢对清楚</p><h1 id="review-heading">待核实付款</h1><p>当记下金库付款时余额不够，这笔仍然保存。这里确认差额由谁承担；后续入金不会自动抹去待核实记录。</p></div>
+        <button type="button" class="text-link back-link" data-nav="home">← 返回总览</button>
         <article class="panel review-summary"><span>还待核实</span><strong id="review-pending-total">¥0.00</strong><small id="review-pending-count">0 笔</small></article>
         <div id="review-list" class="review-list"></div>
         <form id="review-form" class="panel entry-form" hidden novalidate>
@@ -183,7 +186,7 @@
       </section>
 
       <section class="screen" id="screen-history" aria-labelledby="history-heading" hidden>
-        <div class="page-lead"><p class="eyebrow">EVERY LITTLE STEP</p><h1 id="history-heading">账目明细</h1><p>每笔记录都能追溯；记错了可以作废后重新录入。</p></div>
+        <div class="page-lead"><p class="eyebrow">翻到这一页，来看看流水</p><h1 id="history-heading">账目明细</h1><p>每笔记录都能追溯；记错了可以作废后重新录入。</p></div>
         <div class="history-summary panel"><span id="history-summary-label">累计经营盈亏</span><strong id="history-balance">¥0.00</strong><small id="history-count">0 笔有效记录</small></div>
         <label class="filter-label" for="history-filter">查看范围</label>
         <select id="history-filter" class="filter-select"><option value="all">全部记录</option><option value="funding_review">待核实付款</option><option value="pending_cost">待补销售成本</option><option value="deposit">合伙人入金</option><option value="purchase">进货</option><option value="sale">销售</option><option value="expense">其他支出</option><option value="other">其他业务</option><option value="voided">已作废</option></select>
@@ -191,7 +194,7 @@
       </section>
 
       <section class="screen" id="screen-settings" aria-labelledby="settings-heading" hidden>
-        <div class="page-lead"><p class="eyebrow">KEEP IT CLEAR</p><h1 id="settings-heading">账本设置</h1><p>把下一次进货计划写下来，看看金库还需补多少。</p></div>
+        <div class="page-lead"><p class="eyebrow">把小金库打理好</p><h1 id="settings-heading">账本设置</h1><p>把下一次进货计划写下来，看看金库还需补多少。</p></div>
         <form id="settings-form" class="panel settings-form" novalidate>
           <h2>下次用钱计划</h2>
           <div class="input-group"><label for="planned-purchase">下次计划进货 <span>元</span></label><input id="planned-purchase" inputmode="decimal" type="text" placeholder="0.00"><p class="field-help">还没买的计划金额，不会记作已经支出。</p></div>
@@ -202,7 +205,7 @@
           <button class="primary-button" type="submit">保存设置</button>
         </form>
         <article class="panel backup-panel">
-          <p class="eyebrow">KEEP YOUR OWN COPY</p><h2>备份与分享</h2>
+          <p class="eyebrow">留一份安心备份</p><h2>备份与分享</h2>
           <p>账本只保存在这台手机的这个网页 App 中。安卓手机打开同一网址，也不会自动看到你的账。建议每次出摊后导出完整备份。</p>
           <p class="backup-date" id="backup-date">尚未导出完整备份</p>
           <div class="backup-actions"><button type="button" class="outline-button" id="export-json">导出完整备份</button><button type="button" class="outline-button" id="export-csv">导出明细表 CSV</button><button type="button" class="outline-button" id="share-summary">分享经营账摘要</button></div>

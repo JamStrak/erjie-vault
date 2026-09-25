@@ -185,7 +185,7 @@ function renderHome(totals, plan) {
   recovery.classList.toggle('pending', !hasOperatingActivity);
   const recoveryStatus = $('#recovery-status');
   recoveryStatus.textContent = !hasOperatingActivity ? '尚无经营流水'
-    : totals.recoveryCents < 0 ? `还差 ${money(-totals.recoveryCents)} 覆盖成本`
+    : totals.recoveryCents < 0 ? `还差 ${money(-totals.recoveryCents)}`
       : totals.recoveryCents > 0 ? '已覆盖已记成本' : '刚好覆盖已记成本';
   recoveryStatus.classList.toggle('positive', hasOperatingActivity && totals.recoveryCents > 0);
   recoveryStatus.classList.toggle('negative', hasOperatingActivity && totals.recoveryCents < 0);
@@ -427,7 +427,11 @@ function render() {
 function setKind(kind) {
   if (!ENTRY_LABELS[kind]) return;
   $('#entry-kind').value = kind;
-  $$('.kind-tab').forEach(button => button.classList.toggle('is-selected', button.dataset.kind === kind));
+  $$('.kind-tab').forEach(button => {
+    const selected = button.dataset.kind === kind;
+    button.classList.toggle('is-selected', selected);
+    button.setAttribute('aria-pressed', String(selected));
+  });
   $('#more-kind').value = advancedKinds.has(kind) ? kind : '';
   $('#deposit-fields').hidden = kind !== 'deposit';
   $('#source-fields').hidden = !['purchase', 'expense', 'purchase_refund'].includes(kind);
