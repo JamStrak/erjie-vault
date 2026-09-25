@@ -11,6 +11,7 @@ const advancedKinds = new Set(['other_income', 'sale_transfer', 'reimbursement',
 const RECOVERY_KEY = 'erjie-vault-before-import-v1';
 let book = emptyBook();
 let storageReady = false;
+let damagedStorageRaw = null;
 let toastTimer;
 
 function showToast(message) {
@@ -45,18 +46,21 @@ function writeBook(next) {
 }
 
 function loadBook() {
+  let raw = null;
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    raw = localStorage.getItem(STORAGE_KEY);
     const loaded = raw ? assertBook(JSON.parse(raw)) : emptyBook();
     if (!raw) localStorage.setItem(STORAGE_KEY, JSON.stringify(loaded));
     book = loaded;
     storageReady = true;
+    damagedStorageRaw = null;
     $('#storage-warning').hidden = true;
     $('#entry-submit').disabled = false;
     $('#settings-form button[type="submit"]').disabled = false;
     render();
   } catch (error) {
     storageReady = false;
+    damagedStorageRaw = raw;
     showStorageError(error);
     render();
   }
@@ -404,16 +408,36 @@ async function importJson(event) {
   const file = event.target.files?.[0];
   if (!file) return;
   try {
-    if (!storageReady) throw new Error('当前账本未安全载入，不能导入。请先刷新核对。');
+    const replacingDamagedBook = !storageReady && damagedStorageRaw !== null;
+    if (!storageReady && !replacingDamagedBook) throw new Error('当前账本被其他标签页更新或存储不可用，请先刷新核对。');
     if (file.size > 12_000_000) throw new Error('备份文件过大，请检查是否选错文件。');
     const imported = assertBook(JSON.parse(await file.text()));
     const totals = summarize(imported.entries);
-    const promptText = `将用所选备份替换本机账本：\n当前：${book.entries.length} 笔，最新录入 ${latestEntryTime(book)}\n导入：${imported.entries.length} 笔，最新录入 ${latestEntryTime(imported)}，金库余额 ${money(totals.cashCents)}\n继续前会在本机保留当前账本，可从设置撤销这次导入。仍建议另存完整 JSON 备份。`;
+    const currentText = replacingDamagedBook
+      ? '当前：账本数据无法读取，不能自动保留恢复点。请确认已有可用备份。'
+      : `当前：${book.entries.length} 笔，最新录入 ${latestEntryTime(book)}`;
+    const recoveryText = replacingDamagedBook
+      ? '这会覆盖手机里无法读取的原数据。'
+      : '继续前会在本机保留当前账本，可从设置撤销这次导入。仍建议另存完整 JSON 备份。';
+    const promptText = `将用所选备份替换本机账本：\n${currentText}\n导入：${imported.entries.length} 笔，最新录入 ${latestEntryTime(imported)}，金库余额 ${money(totals.cashCents)}\n${recoveryText}`;
     if (!window.confirm(promptText)) return;
     const latestRaw = localStorage.getItem(STORAGE_KEY);
-    assertCurrentRevision(latestRaw ? assertBook(JSON.parse(latestRaw)) : emptyBook(), book);
-    localStorage.setItem(RECOVERY_KEY, JSON.stringify({ savedAt: new Date().toISOString(), book }));
-    writeBook(imported);
+    if (replacingDamagedBook) {
+      if (latestRaw !== damagedStorageRaw) throw new Error('另一个标签页已更新账本，请刷新后重新导入。');
+      const saved = { ...imported, revision: (imported.revision ?? 0) + 1 };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+      book = saved;
+      storageReady = true;
+      damagedStorageRaw = null;
+      $('#storage-warning').hidden = true;
+      $('#entry-submit').disabled = false;
+      $('#settings-form button[type="submit"]').disabled = false;
+      render();
+    } else {
+      assertCurrentRevision(latestRaw ? assertBook(JSON.parse(latestRaw)) : emptyBook(), book);
+      localStorage.setItem(RECOVERY_KEY, JSON.stringify({ savedAt: new Date().toISOString(), book }));
+      writeBook(imported);
+    }
     setScreen('home');
     showToast('备份已恢复，请核对余额和明细');
   } catch (error) { showToast(`导入失败：${error.message}`); }
@@ -449,6 +473,7 @@ function bindEvents() {
   window.addEventListener('storage', event => {
     if (event.key !== STORAGE_KEY) return;
     storageReady = false;
+    damagedStorageRaw = null;
     const warning = $('#storage-warning');
     warning.hidden = false;
     warning.textContent = '账本已在另一个标签页更新。请刷新此页并核对最新余额，然后再继续录入；此页尚未保存的内容不会自动合并。';
