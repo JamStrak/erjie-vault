@@ -1,18 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="二姐杂货铺小金库">
-  <rect width="512" height="512" rx="112" fill="#fff5e5"/>
-  <path d="M0 407c55-20 99-20 151 0s99 20 151 0 107-21 210 7v98H0Z" fill="#f7dbe1"/>
-  <path d="M181 213v-35c0-49 34-84 75-84s75 35 75 84v35" fill="none" stroke="#8f2441" stroke-width="24" stroke-linecap="round"/>
-  <path d="M145 198h222l18 200c2 19-12 34-31 34H158c-19 0-33-15-31-34Z" fill="#ba284a" stroke="#8f2441" stroke-width="15" stroke-linejoin="round"/>
-  <path d="M151 231h210" stroke="#e65b79" stroke-width="9" stroke-linecap="round"/>
-  <path d="M208 284h96M191 340h130" fill="none" stroke="#fff5e5" stroke-width="28" stroke-linecap="round"/>
-  <path d="M353 243c28 14 40 35 35 61" fill="none" stroke="#8f2441" stroke-width="9" stroke-linecap="round"/>
-  <g fill="#f2aabb" stroke="#8f2441" stroke-width="5">
+  <rect width="512" height="512" rx="112" fill="#f8f4e8"/>
+  <path d="M0 407c55-20 99-20 151 0s99 20 151 0 107-21 210 7v98H0Z" fill="#e8f2e9"/>
+  <path d="M181 213v-35c0-49 34-84 75-84s75 35 75 84v35" fill="none" stroke="#174d42" stroke-width="24" stroke-linecap="round"/>
+  <path d="M145 198h222l18 200c2 19-12 34-31 34H158c-19 0-33-15-31-34Z" fill="#1f6655" stroke="#174d42" stroke-width="15" stroke-linejoin="round"/>
+  <path d="M151 231h210" stroke="#d4a04c" stroke-width="9" stroke-linecap="round"/>
+  <path d="M208 284h96M191 340h130" fill="none" stroke="#f8f4e8" stroke-width="28" stroke-linecap="round"/>
+  <path d="M353 243c28 14 40 35 35 61" fill="none" stroke="#174d42" stroke-width="9" stroke-linecap="round"/>
+  <g fill="#fff8e7" stroke="#795716" stroke-width="5">
     <ellipse cx="389" cy="317" rx="16" ry="29" transform="rotate(-35 389 317)"/>
     <ellipse cx="416" cy="317" rx="16" ry="29" transform="rotate(35 416 317)"/>
     <ellipse cx="400" cy="333" rx="16" ry="29" transform="rotate(110 400 333)"/>
     <ellipse cx="404" cy="303" rx="16" ry="29" transform="rotate(90 404 303)"/>
   </g>
-  <circle cx="402" cy="317" r="17" fill="#ffe8a6" stroke="#8f2441" stroke-width="5"/>
-  <circle cx="66" cy="113" r="9" fill="#ba284a"/>
-  <path d="M62 79v18M53 88h18" stroke="#ba284a" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="402" cy="317" r="17" fill="#d4a04c" stroke="#795716" stroke-width="5"/>
+  <circle cx="66" cy="113" r="9" fill="#d4a04c"/>
+  <path d="M62 79v18M53 88h18" stroke="#d4a04c" stroke-width="6" stroke-linecap="round"/>
 </svg>

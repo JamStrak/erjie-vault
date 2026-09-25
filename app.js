@@ -3,6 +3,7 @@ import {
   fundingCases, fundingPlan, money, newEntry, normalizeLegacyFundingReviews, parseNonnegativeYuan, parseYuan, resolveFunding, summarize,
   todayLocal, updateSettings, voidEntry,
 } from './ledger.js';
+import { DEFAULT_THEME, THEME_STORAGE_KEY, normalizeTheme, readTheme, saveTheme } from './theme.js';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -15,6 +16,31 @@ let damagedStorageRaw = null;
 let toastTimer;
 let selectedReviewId = null;
 let fundingCaseById = new Map();
+let currentTheme = DEFAULT_THEME;
+
+function applyTheme(theme) {
+  currentTheme = normalizeTheme(theme);
+  document.documentElement.dataset.theme = currentTheme;
+  document.querySelector('meta[name="theme-color"]').content = currentTheme === 'berry' ? '#fff5e5' : '#f8f4e8';
+  const icon = currentTheme === 'berry' ? './icon-berry.svg' : './icon.svg';
+  $('#brand-icon').setAttribute('src', icon);
+  $('#favicon').setAttribute('href', icon);
+  $$('[data-theme-choice]').forEach(button => {
+    const selected = button.dataset.themeChoice === currentTheme;
+    button.classList.toggle('is-selected', selected);
+    button.setAttribute('aria-pressed', String(selected));
+  });
+}
+
+function chooseTheme(theme) {
+  applyTheme(theme);
+  try {
+    saveTheme(localStorage, currentTheme);
+    showToast(currentTheme === 'jade' ? '已换上桂花青玉，愿小金库生意兴隆' : '已换上莓果红');
+  } catch {
+    showToast('皮肤已临时切换，但本机没能保存；下次打开可能恢复默认');
+  }
+}
 
 function showToast(message) {
   const toast = $('#toast');
@@ -325,7 +351,11 @@ function entryHtml(entry, detailed, pendingCostIds) {
 
 function renderHistory(totals) {
   $('#history-summary-label').textContent = totals.pendingCostCount ? '累计经营盈亏 · 待核算' : '累计经营盈亏';
-  $('#history-balance').textContent = totals.pendingCostCount ? '待核算' : money(totals.profitCents);
+  const balance = $('#history-balance');
+  balance.textContent = totals.pendingCostCount ? '待核算' : money(totals.profitCents);
+  balance.classList.toggle('pending', Boolean(totals.pendingCostCount));
+  balance.classList.toggle('positive', !totals.pendingCostCount && totals.profitCents >= 0);
+  balance.classList.toggle('negative', !totals.pendingCostCount && totals.profitCents < 0);
   $('#history-count').textContent = `${totals.activeCount} 笔有效记录 · ${book.entries.length - totals.activeCount} 笔作废`;
   const filter = $('#history-filter').value;
   const pendingCostIds = pendingCostSaleIds();
@@ -823,6 +853,10 @@ function handleVoid(id) {
 
 function bindEvents() {
   window.addEventListener('storage', event => {
+    if (event.key === THEME_STORAGE_KEY) {
+      applyTheme(event.newValue);
+      return;
+    }
     if (event.key !== STORAGE_KEY) return;
     storageReady = false;
     damagedStorageRaw = null;
@@ -833,6 +867,8 @@ function bindEvents() {
     $('#settings-form button[type="submit"]').disabled = true;
   });
   document.addEventListener('click', event => {
+    const themeChoice = event.target.closest('[data-theme-choice]');
+    if (themeChoice) chooseTheme(themeChoice.dataset.themeChoice);
     const nav = event.target.closest('[data-nav]');
     if (nav) {
       if (nav.dataset.historyFilter) {
@@ -879,6 +915,9 @@ function bindEvents() {
 
 $('#entry-date').value = todayLocal();
 bindEvents();
+let initialTheme = DEFAULT_THEME;
+try { initialTheme = readTheme(localStorage); } catch { /* The ledger loader will show the storage warning. */ }
+applyTheme(initialTheme);
 loadBook();
 setKind('deposit');
 toggleSaleCostInput();

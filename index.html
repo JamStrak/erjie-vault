@@ -3,12 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#fff5e5">
+  <meta name="theme-color" content="#f8f4e8">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="二姐小金库">
   <meta name="description" content="二姐杂货铺的双人合伙账本，看清经营盈亏、库存、现金和每人的垫付。">
-  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <script>try { if (localStorage.getItem('erjie-vault-theme-v1') === 'berry') { document.documentElement.dataset.theme = 'berry'; document.querySelector('meta[name="theme-color"]').content = '#fff5e5'; } } catch { /* Keep the jade default when storage is unavailable. */ }</script>
+  <link id="favicon" rel="icon" href="./icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="./icon.png">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="stylesheet" href="./style.css">
@@ -18,7 +19,7 @@
   <div class="app-shell">
     <header class="topbar">
       <div class="brand-lockup" aria-label="二姐杂货铺小金库">
-        <span class="brand-mark" aria-hidden="true"><img src="./icon.svg" alt=""></span>
+        <span class="brand-mark" aria-hidden="true"><img id="brand-icon" src="./icon.svg" alt=""></span>
         <span><strong>二姐杂货铺</strong><small>小金库 · 两个人的摊位账本</small></span>
       </div>
       <button class="top-icon" id="quick-backup" type="button" aria-label="导出完整备份" title="导出完整备份">
@@ -195,6 +196,15 @@
 
       <section class="screen" id="screen-settings" aria-labelledby="settings-heading" hidden>
         <div class="page-lead"><p class="eyebrow">把小金库打理好</p><h1 id="settings-heading">账本设置</h1><p>把下一次进货计划写下来，看看金库还需补多少。</p></div>
+        <section class="panel theme-panel" aria-labelledby="theme-heading">
+          <div class="panel-heading"><div><p class="eyebrow">给小铺换个好彩头</p><h2 id="theme-heading">主题皮肤</h2></div><span class="panel-flower" aria-hidden="true">✿</span></div>
+          <p class="theme-help">点一下就切换，只改变这台设备的显示，不改变账目和盈亏。</p>
+          <div class="theme-picker" role="group" aria-label="主题皮肤">
+            <button class="theme-choice is-selected" type="button" data-theme-choice="jade" aria-pressed="true"><span class="theme-swatch jade" aria-hidden="true">✿</span><span class="theme-choice-copy"><strong class="theme-choice-title">桂花青玉 <em>默认</em></strong><small class="theme-choice-description">温润玉绿 · 桂花金</small></span><span class="theme-choice-check" aria-hidden="true">✓</span></button>
+            <button class="theme-choice" type="button" data-theme-choice="berry" aria-pressed="false"><span class="theme-swatch berry" aria-hidden="true">✿</span><span class="theme-choice-copy"><strong class="theme-choice-title">莓果红</strong><small class="theme-choice-description">原版的热闹与甜美</small></span><span class="theme-choice-check" aria-hidden="true">✓</span></button>
+          </div>
+          <p class="theme-footnote">皮肤偏好保存在本机，不包含在 JSON 账本备份中；换设备可以重新选。</p>
+        </section>
         <form id="settings-form" class="panel settings-form" novalidate>
           <h2>下次用钱计划</h2>
           <div class="input-group"><label for="planned-purchase">下次计划进货 <span>元</span></label><input id="planned-purchase" inputmode="decimal" type="text" placeholder="0.00"><p class="field-help">还没买的计划金额，不会记作已经支出。</p></div>

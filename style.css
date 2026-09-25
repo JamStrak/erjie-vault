@@ -1,5 +1,29 @@
 :root {
   color-scheme: light;
+  --ink: #39443b;
+  --ink-strong: #26392f;
+  --muted: #5d665e;
+  --line: #d9e2d8;
+  --paper: #fffcf4;
+  --cream: #f8f4e8;
+  --berry: #1f6655;
+  --berry-deep: #174d42;
+  --blush: #d4a04c;
+  --blush-light: #e8f2e9;
+  --sage: #1f6655;
+  --sage-light: #e8f2e9;
+  --gold: #795716;
+  --negative: #8e4b2b;
+  --negative-soft: #fff1e7;
+  --shadow: 0 10px 28px rgba(38, 66, 52, .08);
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: 14px;
+  line-height: 1.55;
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+:root[data-theme="berry"] {
   --ink: #573735;
   --ink-strong: #432625;
   --muted: #75615c;
@@ -13,12 +37,9 @@
   --sage: #59663b;
   --sage-light: #f0f2e4;
   --gold: #946d43;
+  --negative: #90213c;
+  --negative-soft: #ffe7e5;
   --shadow: 0 10px 28px rgba(89, 48, 43, .075);
-  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-  font-size: 14px;
-  line-height: 1.55;
-  font-synthesis: none;
-  -webkit-font-smoothing: antialiased;
 }
 
 * { box-sizing: border-box; }
@@ -1010,4 +1031,430 @@ h2 { margin-bottom: 0; font-size: 20px; line-height: 1.35; letter-spacing: -.025
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
+}
+
+/* 桂花青玉：默认皮肤。莓果主题沿用上方原有的组件色彩。 */
+html:not([data-theme="berry"]) { background: #e7ecdf; }
+:root:not([data-theme="berry"]) body {
+  background: radial-gradient(circle at 4% 15%, #f2f1df 0, transparent 34%), #e7ecdf;
+}
+:root:not([data-theme="berry"]) .app-shell {
+  background: linear-gradient(180deg, #f8f4e8 0, #fbf8ed 300px, #f8f4e8 100%);
+  box-shadow: 0 0 70px rgba(36, 74, 54, .1);
+}
+:root:not([data-theme="berry"]) .topbar { border-bottom-color: #d9e2d8; }
+:root:not([data-theme="berry"]) .brand-mark {
+  border-color: var(--berry);
+  background: var(--paper);
+  box-shadow: 2px 3px 0 rgba(31, 102, 85, .16);
+}
+:root:not([data-theme="berry"]) .top-icon {
+  border-color: #d0dfd3;
+  background: var(--paper);
+}
+:root:not([data-theme="berry"]) .storage-warning {
+  border-color: #d7aa91;
+  background: var(--negative-soft);
+  color: var(--negative);
+}
+:root:not([data-theme="berry"]) .little-spark {
+  border-color: #e6cf9f;
+  background: #f8edce;
+  color: var(--gold);
+}
+
+/* 主卡用玉绿承载经营数据；负数另加杏色底和栗铜字。 */
+:root:not([data-theme="berry"]) .recovery-card {
+  border-color: var(--berry-deep);
+  background: var(--berry);
+  color: var(--paper);
+  box-shadow: 0 11px 24px rgba(23, 77, 66, .2);
+}
+:root:not([data-theme="berry"]) .recovery-card::before { color: #e8d2a4; }
+:root:not([data-theme="berry"]) .recovery-eyebrow { color: #e1f0e5; }
+:root:not([data-theme="berry"]) .recovery-status {
+  background: #e8f2e9;
+  color: var(--berry-deep);
+}
+:root:not([data-theme="berry"]) .recovery-status.positive {
+  background: #e8f2e9;
+  color: var(--berry-deep);
+}
+:root:not([data-theme="berry"]) .recovery-status.negative {
+  background: var(--negative-soft);
+  color: var(--negative);
+}
+:root:not([data-theme="berry"]) .recovery-number.negative {
+  width: fit-content;
+  max-width: 100%;
+  padding: 5px 12px 8px;
+  border-radius: 15px;
+  background: var(--negative-soft);
+  color: var(--negative);
+}
+:root:not([data-theme="berry"]) .recovery-note {
+  border-top-color: rgba(255, 252, 244, .3);
+  color: #e2f0e7;
+}
+:root:not([data-theme="berry"]) .profit-card {
+  border-color: #d8e2d8;
+  border-top-color: #d4a04c;
+}
+:root:not([data-theme="berry"]) .profit-status { color: var(--berry-deep); }
+:root:not([data-theme="berry"]) .profit-status.pending {
+  background: var(--negative-soft);
+  color: var(--negative);
+}
+:root:not([data-theme="berry"]) .profit-number.positive { color: var(--berry-deep); }
+:root:not([data-theme="berry"]) .profit-number.negative,
+:root:not([data-theme="berry"]) .profit-number.pending { color: var(--negative); }
+:root:not([data-theme="berry"]) .profit-breakdown { border-top-color: #d9e2d8; }
+:root:not([data-theme="berry"]) .profit-action {
+  border-color: #d7aa91;
+  background: var(--negative-soft);
+  color: var(--negative);
+}
+
+/* 钱、货、待报销与待核实：色彩保留各自的含义。 */
+:root:not([data-theme="berry"]) .position-card.debt {
+  border-color: #e4c8b7;
+  background: #fff8f1;
+}
+:root:not([data-theme="berry"]) .position-card.is-negative {
+  border-color: #c99878;
+  background: var(--negative-soft);
+}
+:root:not([data-theme="berry"]) .position-card.is-negative strong,
+:root:not([data-theme="berry"]) .position-card.debt strong,
+:root:not([data-theme="berry"]) .position-card.debt .card-link { color: var(--negative); }
+:root:not([data-theme="berry"]) .position-symbol.teal,
+:root:not([data-theme="berry"]) .position-symbol.blue {
+  background: var(--sage-light);
+  color: var(--berry-deep);
+}
+:root:not([data-theme="berry"]) .position-symbol.coral,
+:root:not([data-theme="berry"]) .position-card.is-negative .position-symbol {
+  background: #f4ddce;
+  color: var(--negative);
+}
+:root:not([data-theme="berry"]) .funding-alert {
+  border-color: #d4a383;
+  border-left-color: var(--negative);
+  background: var(--negative-soft);
+  box-shadow: 0 7px 18px rgba(142, 75, 43, .11);
+}
+:root:not([data-theme="berry"]) .funding-alert-icon { background: var(--negative); }
+:root:not([data-theme="berry"]) .funding-alert > span:last-child,
+:root:not([data-theme="berry"]) .funding-alert .alert-eyebrow,
+:root:not([data-theme="berry"]) .funding-alert .alert-title,
+:root:not([data-theme="berry"]) .funding-alert strong,
+:root:not([data-theme="berry"]) .funding-alert .alert-action { color: var(--negative); }
+:root:not([data-theme="berry"]) .funding-alert .alert-action { background: #fffcf4; }
+:root:not([data-theme="berry"]) .funding-alert.is-confirmed {
+  border-color: #cbdccd;
+  border-left-color: var(--berry);
+  background: var(--sage-light);
+}
+:root:not([data-theme="berry"]) .funding-alert.is-confirmed .funding-alert-icon { background: var(--berry); }
+:root:not([data-theme="berry"]) .funding-alert.is-confirmed .alert-title,
+:root:not([data-theme="berry"]) .funding-alert.is-confirmed strong,
+:root:not([data-theme="berry"]) .funding-alert.is-confirmed > span:last-child,
+:root:not([data-theme="berry"]) .funding-alert.is-confirmed .alert-action { color: var(--berry-deep); }
+:root:not([data-theme="berry"]) .supplier-debt,
+:root:not([data-theme="berry"]) .supplier-debt-card {
+  border-color: #e4c8b7;
+  background: #fff8f1;
+}
+:root:not([data-theme="berry"]) .supplier-debt strong,
+:root:not([data-theme="berry"]) .supplier-debt-card strong { color: var(--negative); }
+
+:root:not([data-theme="berry"]) .panel-flower { color: #d4a04c; }
+:root:not([data-theme="berry"]) .partner-card {
+  border-color: #d6e5d9;
+  background: #f2f7ef;
+}
+:root:not([data-theme="berry"]) .partner-card + .partner-card {
+  border-color: #e5dec7;
+  background: #faf6e9;
+}
+:root:not([data-theme="berry"]) .partner-card + .partner-card .partner-name { color: var(--gold); }
+:root:not([data-theme="berry"]) .partner-line { border-top-color: #d9e2d8; }
+:root:not([data-theme="berry"]) .soft-note,
+:root:not([data-theme="berry"]) .form-hint { color: var(--berry-deep); }
+:root:not([data-theme="berry"]) .planning-panel,
+:root:not([data-theme="berry"]) .reconciliation-panel { background: var(--paper); }
+:root:not([data-theme="berry"]) .status-pill { color: var(--berry-deep); }
+:root:not([data-theme="berry"]) .status-pill.needs-money {
+  background: var(--negative-soft);
+  color: var(--negative);
+}
+:root:not([data-theme="berry"]) .planning-debt {
+  border-color: #e4c8b7;
+  background: #fff8f1;
+}
+:root:not([data-theme="berry"]) .planning-debt strong,
+:root:not([data-theme="berry"]) #plan-supplier-row strong { color: var(--negative); }
+:root:not([data-theme="berry"]) #plan-supplier-row {
+  border-color: #e4c8b7;
+  background: #fff8f1;
+}
+:root:not([data-theme="berry"]) .need-grid > div {
+  border-color: #d9e2d8;
+  background: #f5f7ef;
+}
+:root:not([data-theme="berry"]) .tiny-note { background: #f8edce; }
+:root:not([data-theme="berry"]) .reconciliation-panel summary > span:last-child {
+  border-color: #c8dccd;
+  background: var(--sage-light);
+}
+:root:not([data-theme="berry"]) .comparison-track { background: #e9eee4; }
+
+/* 快捷操作、流水和录入表单。 */
+:root:not([data-theme="berry"]) .action-card {
+  border-color: #d1e1d2;
+  background: #f1f6ed;
+}
+:root:not([data-theme="berry"]) .action-card.deposit {
+  border-color: #cbded0;
+  background: #edf5ed;
+}
+:root:not([data-theme="berry"]) .action-card.purchase {
+  border-color: #e6d9b9;
+  background: #faf5e8;
+}
+:root:not([data-theme="berry"]) .action-card.sale {
+  border-color: #d8e3d4;
+  background: #f2f6ec;
+}
+:root:not([data-theme="berry"]) .entry-row.outflow .entry-icon {
+  background: var(--negative-soft);
+  color: var(--negative);
+}
+:root:not([data-theme="berry"]) .entry-row.neutral .entry-icon { background: #f8edce; }
+:root:not([data-theme="berry"]) .entry-row.inflow .entry-amount { color: var(--berry-deep); }
+:root:not([data-theme="berry"]) .entry-row.outflow .entry-amount { color: var(--negative); }
+:root:not([data-theme="berry"]) .funding-chip {
+  border-color: #d7aa91;
+  background: var(--negative-soft);
+  color: var(--negative);
+}
+:root:not([data-theme="berry"]) .review-entry-button {
+  border-color: var(--negative);
+  background: var(--negative);
+}
+:root:not([data-theme="berry"]) .cost-button {
+  border-color: #e1c68f;
+  background: #f8edce;
+  color: var(--gold);
+}
+:root:not([data-theme="berry"]) .empty-state { border-color: #cfdccf; }
+:root:not([data-theme="berry"]) .kind-tabs {
+  border-color: #d9e2d8;
+  background: #edf2e8;
+}
+:root:not([data-theme="berry"]) .kind-tab.is-selected {
+  box-shadow: 0 3px 10px rgba(23, 77, 66, .16);
+}
+:root:not([data-theme="berry"]) .money-input {
+  border-color: #cbdccf;
+  background: var(--paper);
+}
+:root:not([data-theme="berry"]) .money-input:focus-within { box-shadow: 0 0 0 3px rgba(31, 102, 85, .14); }
+:root:not([data-theme="berry"]) .money-input input::placeholder { color: #7f9184; }
+:root:not([data-theme="berry"]) .choice-stack label { background: var(--paper); }
+:root:not([data-theme="berry"]) .choice-stack label:has(input:checked) {
+  border-color: #a8ccae;
+  background: #edf5ed;
+}
+:root:not([data-theme="berry"]) .input-group input,
+:root:not([data-theme="berry"]) .input-group select,
+:root:not([data-theme="berry"]) #entry-source,
+:root:not([data-theme="berry"]) #entry-target-person,
+:root:not([data-theme="berry"]) #entry-person,
+:root:not([data-theme="berry"]) #sale-cost-sale,
+:root:not([data-theme="berry"]) #supplier-payment-credit,
+:root:not([data-theme="berry"]) #supplier-payment-source,
+:root:not([data-theme="berry"]) #sale-source { border-color: #cbd8ca; }
+:root:not([data-theme="berry"]) .input-group input:disabled {
+  background: #eef0e8;
+  color: var(--muted);
+}
+:root:not([data-theme="berry"]) .confirm-row {
+  border-color: #e4d9bf;
+  background: #faf5e8;
+}
+:root:not([data-theme="berry"]) .shortfall-hint {
+  border-color: #d7aa91;
+  background: var(--negative-soft);
+  color: var(--negative);
+}
+:root:not([data-theme="berry"]) .shortfall-hint::before { background: var(--negative); }
+:root:not([data-theme="berry"]) .primary-button { box-shadow: 0 7px 15px rgba(23, 77, 66, .18); }
+
+/* 明细、核实与设置。 */
+:root:not([data-theme="berry"]) .history-summary {
+  border-color: #cbded0;
+  background: #edf5ed;
+}
+:root:not([data-theme="berry"]) .history-summary strong { color: var(--berry-deep); }
+:root:not([data-theme="berry"]) .history-summary strong.negative,
+:root:not([data-theme="berry"]) .history-summary strong.pending {
+  color: var(--negative);
+}
+:root:not([data-theme="berry"]) .review-summary {
+  border-color: #d7aa91;
+  background: var(--negative-soft);
+}
+:root:not([data-theme="berry"]) .review-summary strong { color: var(--negative); }
+:root:not([data-theme="berry"]) .review-case.is-selected,
+:root:not([data-theme="berry"]) .review-item.is-selected {
+  border-color: #cf9a79;
+  background: var(--negative-soft);
+}
+:root:not([data-theme="berry"]) .review-case-top strong,
+:root:not([data-theme="berry"]) .review-case-title strong,
+:root:not([data-theme="berry"]) .review-item-title strong { color: var(--negative); }
+:root:not([data-theme="berry"]) .review-case button,
+:root:not([data-theme="berry"]) .review-item button {
+  border-color: #d7aa91;
+  background: var(--negative-soft);
+  color: var(--negative);
+}
+:root:not([data-theme="berry"]) .review-case .review-entry-button {
+  border-color: var(--negative);
+  background: var(--negative);
+  color: #fffaf2;
+}
+:root:not([data-theme="berry"]) .outline-button {
+  border-color: #b8d2bf;
+  background: #f5f8ef;
+}
+:root:not([data-theme="berry"]) .balance-card {
+  border-color: #cbded0;
+  background: #edf5ed;
+}
+:root:not([data-theme="berry"]) .metric-icon.blue {
+  background: var(--sage-light);
+  color: var(--berry-deep);
+}
+:root:not([data-theme="berry"]) .metric-icon.peach { background: #f8edce; }
+:root:not([data-theme="berry"]) .bottom-nav {
+  border-top-color: #d9e2d8;
+  background: rgba(255, 252, 244, .97);
+  box-shadow: 0 -5px 22px rgba(38, 66, 52, .09);
+}
+:root:not([data-theme="berry"]) .toast { box-shadow: 0 10px 28px rgba(38, 66, 52, .24); }
+
+@media (hover: hover) {
+  :root:not([data-theme="berry"]) .top-icon:hover,
+  :root:not([data-theme="berry"]) .outline-button:hover { background: var(--sage-light); }
+  :root:not([data-theme="berry"]) .review-entry-button:hover { background: #733c23; }
+}
+
+/* 设置页皮肤选择器，两种皮肤都显示各自真实的配色样本。 */
+.theme-panel { margin-bottom: 14px; padding: 20px; }
+.theme-panel h2 { margin-bottom: 6px; font-size: 19px; }
+.theme-panel > p:not(.eyebrow) { margin: 0 0 14px; color: var(--muted); font-size: 13px; line-height: 1.6; }
+.theme-picker {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.theme-choice {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 7px;
+  min-width: 0;
+  min-height: 112px;
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--paper);
+  color: var(--ink-strong);
+  text-align: left;
+  transition: border-color .18s ease, background-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+.theme-choice.is-selected,
+.theme-choice[aria-pressed="true"] {
+  border: 2px solid var(--berry);
+  padding: 12px;
+  background: var(--sage-light);
+  box-shadow: 0 0 0 2px var(--paper) inset;
+}
+.theme-swatch {
+  display: grid;
+  place-items: center;
+  flex: 0 0 28px;
+  width: 44px;
+  height: 28px;
+  border: 1px solid rgba(0, 0, 0, .1);
+  border-radius: 9px;
+  background: linear-gradient(135deg, #f8f4e8 0 30%, #1f6655 30% 73%, #d4a04c 73%);
+  color: #fffcf4;
+  font-size: 16px;
+  line-height: 1;
+}
+.theme-choice[data-theme-choice="berry"] .theme-swatch,
+.theme-choice[data-theme="berry"] .theme-swatch {
+  background: linear-gradient(135deg, #fff5e5 0 30%, #ba284a 30% 73%, #f2aabb 73%);
+}
+.theme-choice-copy { display: grid; gap: 3px; min-width: 0; }
+.theme-choice-title {
+  display: block;
+  color: var(--ink-strong);
+  font-size: 14px;
+  font-weight: 850;
+  line-height: 1.3;
+}
+.theme-choice-title em {
+  display: inline-block;
+  margin-left: 3px;
+  padding: 2px 4px;
+  border-radius: 5px;
+  background: #f8edce;
+  color: #795716;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 800;
+  vertical-align: 1px;
+}
+.theme-choice-description {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.theme-choice-check {
+  position: absolute;
+  top: 11px;
+  right: 11px;
+  display: grid;
+  place-items: center;
+  width: 23px;
+  height: 23px;
+  border-radius: 50%;
+  background: var(--berry);
+  color: #fffaf2;
+  font-size: 14px;
+  font-weight: 850;
+  opacity: 0;
+  pointer-events: none;
+}
+.theme-choice.is-selected .theme-choice-check,
+.theme-choice[aria-pressed="true"] .theme-choice-check { opacity: 1; }
+@media (hover: hover) {
+  .theme-choice:hover { transform: translateY(-2px); border-color: var(--berry); box-shadow: var(--shadow); }
+}
+@media (max-width: 390px) {
+  .theme-panel { padding: 16px; }
+  .theme-choice { padding: 11px; }
+  .theme-choice.is-selected,
+  .theme-choice[aria-pressed="true"] { padding: 10px; }
+}
+@media (max-width: 350px) {
+  .theme-picker { grid-template-columns: 1fr; }
+  .theme-choice { min-height: 76px; }
 }
