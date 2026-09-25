@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "settings": {
+    "names": { "me": "我", "partner": "合伙人" },
+    "plannedPurchaseCents": 0,
+    "reserveCents": 0
+  },
+  "entries": [],
+  "lastBackupAt": null
+}

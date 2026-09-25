@@ -1,0 +1,6 @@
+node_modules/
+*.log
+.DS_Store
+Thumbs.db
+二姐小金库_完整备份_*.json
+二姐小金库_明细_*.csv

@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f7faf8">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="二姐小金库">
+  <meta name="description" content="二姐杂货铺的双人合伙记账工具，清楚记录出资、进货和金库余额。">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icon.png">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./style.css">
+  <title>二姐小金库</title>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-lockup" aria-label="二姐杂货铺小金库">
+        <span class="brand-mark" aria-hidden="true">₂</span>
+        <span><strong>二姐小金库</strong><small>把每一笔，都记得明明白白</small></span>
+      </div>
+      <button class="top-icon" id="quick-backup" type="button" aria-label="导出完整备份" title="导出完整备份">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M4 16.5v2A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5v-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </header>
+
+    <div id="storage-warning" class="storage-warning" hidden role="alert"></div>
+
+    <main>
+      <section class="screen is-active" id="screen-home" aria-labelledby="home-heading">
+        <div class="intro-row">
+          <div><p class="eyebrow">OUR LITTLE VAULT · 合伙账本</p><h1 id="home-heading">今天，金库还好吗？</h1></div>
+          <span class="little-spark" aria-hidden="true">✳</span>
+        </div>
+
+        <article class="balance-card" aria-label="金库可用余额">
+          <div class="balance-top"><span>金库可用余额</span><span class="live-dot"><i></i> 实时计算</span></div>
+          <strong class="balance-number" id="cash-balance">¥0.00</strong>
+          <div class="balance-bottom"><span id="cash-caption">记录第一笔入金，开始记账</span><span class="coin-illustration" aria-hidden="true">✦</span></div>
+        </article>
+
+        <div class="metric-grid" aria-label="经营数据">
+          <article class="metric-card"><span class="metric-icon blue">↗</span><span>累计销售</span><strong id="sales-total">¥0.00</strong></article>
+          <article class="metric-card"><span class="metric-icon peach">↘</span><span>累计进货</span><strong id="purchase-total">¥0.00</strong></article>
+        </div>
+
+        <article class="panel funding-panel">
+          <div class="panel-heading"><div><p class="eyebrow">50 / 50 · 合伙出资</p><h2>两个人的投入</h2></div><span class="panel-flower" aria-hidden="true">✿</span></div>
+          <div class="partner-comparison">
+            <div><span id="me-label">我</span><strong id="me-capital">¥0.00</strong></div>
+            <div class="comparison-track"><span id="me-bar"></span><span id="partner-bar"></span></div>
+            <div><span id="partner-label">合伙人</span><strong id="partner-capital">¥0.00</strong></div>
+          </div>
+          <div id="parity-note" class="soft-note">目前两人出资相同。</div>
+        </article>
+
+        <article class="panel planning-panel">
+          <div class="panel-heading"><div><p class="eyebrow">下一次进货前看这里</p><h2>要不要再存钱？</h2></div><span class="status-pill" id="funding-status">够用</span></div>
+          <p class="planning-explain" id="funding-explain">先填下次计划进货和希望保留的备用金，账本就能帮你算。</p>
+          <div class="need-grid"><div><span id="me-due-label">我建议再存</span><strong id="me-due">¥0.00</strong></div><div><span id="partner-due-label">合伙人建议再存</span><strong id="partner-due">¥0.00</strong></div></div>
+          <p class="tiny-note" id="payable-note" hidden></p>
+          <p class="tiny-note" id="receivable-note" hidden></p>
+          <button class="text-link" type="button" data-nav="settings">设置进货计划与备用金 <span aria-hidden="true">→</span></button>
+        </article>
+
+        <div class="section-heading"><div><p class="eyebrow">QUICK ENTRY</p><h2>记下一笔</h2></div></div>
+        <div class="action-grid">
+          <button type="button" class="action-card deposit" data-entry-kind="deposit"><span class="action-symbol">＋</span><strong>合伙人入金</strong><small>谁实际存了钱</small></button>
+          <button type="button" class="action-card purchase" data-entry-kind="purchase"><span class="action-symbol">⌁</span><strong>进货支出</strong><small>金库付或个人垫</small></button>
+          <button type="button" class="action-card sale" data-entry-kind="sale"><span class="action-symbol">↗</span><strong>销售记录</strong><small>收款去向记清楚</small></button>
+        </div>
+
+        <div class="section-heading recent-heading"><div><p class="eyebrow">RECENT ACTIVITY</p><h2>最近记录</h2></div><button class="text-link" type="button" data-nav="history">查看全部 →</button></div>
+        <div id="recent-list" class="entry-list"></div>
+      </section>
+
+      <section class="screen" id="screen-entry" aria-labelledby="entry-heading" hidden>
+        <div class="page-lead"><p class="eyebrow">A LITTLE BIT, EVERY DAY</p><h1 id="entry-heading">记下一笔</h1><p>按实际发生的金额记录，金库余额会自动更新。</p></div>
+        <div class="kind-tabs" role="group" aria-label="记账类型">
+          <button type="button" data-kind="deposit" class="kind-tab is-selected">入金</button>
+          <button type="button" data-kind="purchase" class="kind-tab">进货</button>
+          <button type="button" data-kind="sale" class="kind-tab">销售</button>
+          <button type="button" data-kind="expense" class="kind-tab">其他支出</button>
+        </div>
+        <label class="more-kind-label" for="more-kind">其他业务</label>
+          <select id="more-kind" class="more-kind"><option value="">选择其他类型…</option><option value="other_income">其他收入</option><option value="sale_transfer">代收销售款转入金库</option><option value="reimbursement">报销个人垫付</option><option value="convert_advance">垫付转为出资</option><option value="return_capital">返还合伙人出资</option></select>
+        <form id="entry-form" class="entry-form panel" novalidate>
+          <input type="hidden" id="entry-kind" value="deposit">
+          <label class="field-label" for="entry-amount" id="amount-label">这次实际存入多少？</label>
+          <div class="money-input"><span>¥</span><input id="entry-amount" name="amount" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00" required><small>元</small></div>
+
+          <div id="deposit-fields" class="conditional-fields">
+            <span class="field-label">这次是谁存入金库？</span>
+            <div class="choice-stack">
+              <label><input type="radio" name="depositMode" value="single" checked><span>只记一人的实际入金</span></label>
+              <label><input type="radio" name="depositMode" value="paired"><span>两人都已入金，金额相同</span></label>
+            </div>
+            <div id="single-depositor" class="input-group"><label for="entry-person">入金人</label><select id="entry-person"></select></div>
+            <label id="paired-confirm-row" class="confirm-row" hidden><input id="paired-confirm" type="checkbox"><span>我确认两个人的钱都已实际进入金库；上面的金额是<strong>每人</strong>存入的金额。</span></label>
+          </div>
+
+          <div id="source-fields" class="conditional-fields" hidden>
+            <label class="field-label" for="entry-source">这笔钱从哪里付？</label>
+            <select id="entry-source"><option value="treasury">从金库支付</option><option value="me">我个人垫付</option><option value="partner">合伙人个人垫付</option></select>
+            <p class="field-help">个人垫付会记成金库待报销的钱；金库现金和出资额暂时不变。</p>
+          </div>
+
+          <div id="sale-fields" class="conditional-fields" hidden>
+            <label class="field-label" for="sale-source">这笔销售款到了哪里？</label>
+            <select id="sale-source"><option value="treasury">已进入金库账户/现金</option><option value="me">我先代收，还没转入金库</option><option value="partner">合伙人先代收，还没转入金库</option></select>
+            <p class="field-help">个人代收只增加待转入销售款；实际转入金库后，再从“其他业务”记转入。</p>
+          </div>
+
+          <div id="person-fields" class="conditional-fields" hidden><label class="field-label" for="entry-target-person">对应哪位合伙人？</label><select id="entry-target-person"></select><p class="field-help" id="person-help"></p></div>
+
+          <div class="form-row"><div class="input-group"><label for="entry-date">发生日期</label><input id="entry-date" type="date" required></div></div>
+          <div class="input-group"><label for="entry-note">备注 <span>选填</span></label><input id="entry-note" type="text" maxlength="160" placeholder="例如：新进小熊挂件 10 个"></div>
+          <p id="entry-hint" class="form-hint">只记已经收到的钱；对方入金不会自动算作你的入金。</p>
+          <button class="primary-button" id="entry-submit" type="submit">保存这笔入金</button>
+        </form>
+      </section>
+
+      <section class="screen" id="screen-history" aria-labelledby="history-heading" hidden>
+        <div class="page-lead"><p class="eyebrow">EVERY LITTLE STEP</p><h1 id="history-heading">账目明细</h1><p>每笔记录都能追溯；记错了可以作废后重新录入。</p></div>
+        <div class="history-summary panel"><span>当前金库可用余额</span><strong id="history-balance">¥0.00</strong><small id="history-count">0 笔有效记录</small></div>
+        <label class="filter-label" for="history-filter">查看范围</label>
+        <select id="history-filter" class="filter-select"><option value="all">全部记录</option><option value="deposit">合伙人入金</option><option value="purchase">进货</option><option value="sale">销售</option><option value="expense">其他支出</option><option value="other">其他业务</option><option value="voided">已作废</option></select>
+        <div id="history-list" class="entry-list full-list"></div>
+      </section>
+
+      <section class="screen" id="screen-settings" aria-labelledby="settings-heading" hidden>
+        <div class="page-lead"><p class="eyebrow">KEEP IT CLEAR</p><h1 id="settings-heading">账本设置</h1><p>把下一次进货计划写下来，看看金库还需补多少。</p></div>
+        <form id="settings-form" class="panel settings-form" novalidate>
+          <h2>下次用钱计划</h2>
+          <div class="input-group"><label for="planned-purchase">下次计划进货 <span>元</span></label><input id="planned-purchase" inputmode="decimal" type="text" placeholder="0.00"><p class="field-help">还没买的计划金额，不会记作已经支出。</p></div>
+          <div class="input-group"><label for="reserve-amount">希望留作备用金 <span>元</span></label><input id="reserve-amount" inputmode="decimal" type="text" placeholder="0.00"></div>
+          <div class="form-divider"></div>
+          <h2>两位合伙人的称呼</h2>
+          <div class="two-fields"><div class="input-group"><label for="my-name">我</label><input id="my-name" maxlength="20" type="text"></div><div class="input-group"><label for="partner-name">合伙人</label><input id="partner-name" maxlength="20" type="text"></div></div>
+          <button class="primary-button" type="submit">保存设置</button>
+        </form>
+        <article class="panel backup-panel">
+          <p class="eyebrow">KEEP YOUR OWN COPY</p><h2>备份与分享</h2>
+          <p>账本只保存在这台手机的这个网页 App 中。安卓手机打开同一网址，也不会自动看到你的账。建议每次出摊后导出完整备份。</p>
+          <p class="backup-date" id="backup-date">尚未导出完整备份</p>
+          <div class="backup-actions"><button type="button" class="outline-button" id="export-json">导出完整备份</button><button type="button" class="outline-button" id="export-csv">导出明细表 CSV</button><button type="button" class="outline-button" id="share-summary">分享余额摘要</button></div>
+          <div class="form-divider"></div>
+          <label class="import-label" for="import-file">从备份恢复账本</label>
+          <p class="field-help">导入会替换这台设备上的全部记录。先导出当前账本，再选择 JSON 备份文件。</p>
+          <input id="import-file" type="file" accept="application/json,.json">
+          <p class="field-help" id="recovery-description" hidden></p>
+          <button type="button" class="outline-button" id="restore-pre-import" hidden>撤销上次导入，恢复原账本</button>
+        </article>
+        <p class="settings-footnote">“金库可用余额”回答现在有没有钱进货；合伙人个人代收而未转入的销售款不算在内。已进货的商品仍有价值，因此余额不等于利润。个人垫付款会列为待报销，不会自动算成出资。</p>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" aria-label="主导航"><button type="button" data-nav="home" class="is-current" aria-current="page"><span aria-hidden="true">⌂</span>总览</button><button type="button" data-nav="entry"><span aria-hidden="true">＋</span>记一笔</button><button type="button" data-nav="history"><span aria-hidden="true">☷</span>明细</button><button type="button" data-nav="settings"><span aria-hidden="true">◌</span>设置</button></nav>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
