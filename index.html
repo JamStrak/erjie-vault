@@ -34,6 +34,9 @@
           <div><p class="eyebrow">二姐杂货铺 · 合伙经营账</p><h1 id="home-heading">这门生意，现在怎么样？</h1></div>
           <span class="little-spark" aria-hidden="true">✳</span>
         </div>
+        <button id="funding-alert" type="button" class="funding-alert" data-nav="review" hidden>
+          <span class="funding-alert-icon" aria-hidden="true">!</span><span class="funding-alert-copy"><strong id="funding-alert-title">有付款待核实</strong><small id="funding-alert-detail">逐笔确认是谁垫付或欠了谁的钱</small></span><span aria-hidden="true">→</span>
+        </button>
 
         <article class="profit-card" aria-label="累计经营盈亏">
           <div class="profit-top"><span>累计经营盈亏</span><span class="profit-status" id="profit-status">已核算</span></div>
@@ -48,10 +51,17 @@
           <button id="pending-cost-action" type="button" class="profit-action" data-nav="history" data-history-filter="pending_cost" hidden>有销售还没补成本，去补录 →</button>
         </article>
 
+        <article class="recovery-card" aria-labelledby="recovery-heading">
+          <div class="recovery-top">
+            <div><span class="recovery-eyebrow">算上全部进货</span><h2 id="recovery-heading">整摊回本差额</h2></div>
+            <span class="recovery-status" id="recovery-status">尚无流水</span>
+          </div>
+          <strong class="recovery-number" id="recovery-balance">¥0.00</strong>
+          <p class="recovery-caption" id="recovery-caption">经营收入还没有可核算的记录。</p>
+          <p class="recovery-note">这里会扣除全部净进货成本（含未售和报损的商品）及其他经营费用。合伙人入金不算收入；差额也不表示已返还出资或销售款已进入金库。</p>
+        </article>
+
         <div class="section-heading finance-heading"><div><p class="eyebrow">MONEY & STOCK</p><h2>钱和货，现在在哪？</h2></div></div>
-        <button id="funding-alert" type="button" class="funding-alert" data-nav="review" hidden>
-          <span class="funding-alert-icon" aria-hidden="true">!</span><span class="funding-alert-copy"><strong id="funding-alert-title">有付款待核实</strong><small id="funding-alert-detail">逐笔确认是谁垫付或欠了谁的钱</small></span><span aria-hidden="true">→</span>
-        </button>
         <div class="position-grid" aria-label="现金、库存与待结算">
           <article class="position-card"><span class="position-symbol teal">¥</span><span id="cash-label">金库账面余额</span><strong id="cash-balance">¥0.00</strong><small id="cash-caption">实际进出金库后剩余的钱</small></article>
           <article class="position-card debt"><span class="position-symbol coral">↘</span><span>垫付待报销</span><strong id="payable-total">¥0.00</strong><button type="button" class="card-link" data-entry-kind="reimbursement">记报销 →</button></article>

@@ -176,6 +176,23 @@ function renderHome(totals, plan) {
     ? '有销售没填卖出商品的进价，盈亏与库存成本暂时不能准确计算。'
     : '累计经营结果＝销售＋其他收入－已售商品成本－费用－报损；还没卖的货留在库存。';
   $('#pending-cost-action').hidden = !pending;
+  const recovery = $('#recovery-balance');
+  const hasOperatingActivity = totals.purchaseCents > 0 || totals.salesCents > 0
+    || totals.expensesCents > 0 || totals.otherIncomeCents > 0;
+  recovery.textContent = money(totals.recoveryCents);
+  recovery.classList.toggle('positive', hasOperatingActivity && totals.recoveryCents > 0);
+  recovery.classList.toggle('negative', hasOperatingActivity && totals.recoveryCents < 0);
+  recovery.classList.toggle('pending', !hasOperatingActivity);
+  const recoveryStatus = $('#recovery-status');
+  recoveryStatus.textContent = !hasOperatingActivity ? '尚无经营流水'
+    : totals.recoveryCents < 0 ? `还差 ${money(-totals.recoveryCents)} 覆盖成本`
+      : totals.recoveryCents > 0 ? '已覆盖已记成本' : '刚好覆盖已记成本';
+  recoveryStatus.classList.toggle('positive', hasOperatingActivity && totals.recoveryCents > 0);
+  recoveryStatus.classList.toggle('negative', hasOperatingActivity && totals.recoveryCents < 0);
+  recoveryStatus.classList.toggle('pending', !hasOperatingActivity);
+  $('#recovery-caption').textContent = !hasOperatingActivity
+    ? '开始记进货和销售后，这里会显示收入离覆盖全部成本还差多少。'
+    : '销售及其他收入－全部净进货－经营费用；未卖的货也算投入，入金不重复扣。';
   $('#cash-balance').textContent = money(totals.cashCents);
   $('#cash-balance').closest('.position-card').classList.toggle('is-negative', totals.cashCents < 0);
   $('#cash-caption').textContent = totals.cashCents < 0
@@ -676,6 +693,7 @@ async function exportCsv() {
     ['二姐小金库 · 账目摘要'],
     ['导出时间', exportedAt],
     ['累计经营盈亏（元）', totals.pendingCostCount ? `待核算：${totals.pendingCostCount} 笔销售未补成本` : (totals.profitCents / 100).toFixed(2)],
+    ['整摊回本差额（经营收入覆盖全部进货及费用，元）', (totals.recoveryCents / 100).toFixed(2)],
     ['累计销售（元）', (totals.salesCents / 100).toFixed(2)],
     ['已售商品成本（元）', (totals.soldCostCents / 100).toFixed(2)],
     ['其他经营费用及报损（元）', ((totals.expensesCents + totals.stockLossCents) / 100).toFixed(2)],
@@ -721,7 +739,7 @@ async function shareSummary() {
   const totals = summarize(book.entries);
   const profitText = totals.pendingCostCount ? `待核算（${totals.pendingCostCount} 笔销售未补成本）` : money(totals.profitCents);
   const inventoryText = totals.pendingCostCount ? '待核算' : money(totals.inventoryCents);
-  const text = `二姐小金库 · ${todayLocal()}\n累计经营盈亏 ${profitText}\n累计销售 ${money(totals.salesCents)}｜已售商品成本 ${money(totals.soldCostCents)}\n金库账面余额 ${money(totals.cashCents)}｜未售商品成本 ${inventoryText}\n待核实付款 ${totals.pendingFundingCount} 笔，共 ${money(totals.pendingFundingCents)}｜欠供应商 ${money(totals.supplierPayableCents)}\n个人代收待转入 ${money(totals.receivableCents.me + totals.receivableCents.partner)}\n${personName('me')}：正式出资 ${money(totals.capitalCents.me)}，垫付待报销 ${money(totals.payableCents.me)}，合计 ${money(totals.capitalCents.me + totals.payableCents.me)}\n${personName('partner')}：正式出资 ${money(totals.capitalCents.partner)}，垫付待报销 ${money(totals.payableCents.partner)}，合计 ${money(totals.capitalCents.partner + totals.payableCents.partner)}\n有效记录 ${totals.activeCount} 笔`;
+  const text = `二姐小金库 · ${todayLocal()}\n累计经营盈亏 ${profitText}\n整摊回本差额 ${money(totals.recoveryCents)}（经营收入覆盖全部净进货和费用；不代表出资已返还）\n累计销售 ${money(totals.salesCents)}｜已售商品成本 ${money(totals.soldCostCents)}\n金库账面余额 ${money(totals.cashCents)}｜未售商品成本 ${inventoryText}\n待核实付款 ${totals.pendingFundingCount} 笔，共 ${money(totals.pendingFundingCents)}｜欠供应商 ${money(totals.supplierPayableCents)}\n个人代收待转入 ${money(totals.receivableCents.me + totals.receivableCents.partner)}\n${personName('me')}：正式出资 ${money(totals.capitalCents.me)}，垫付待报销 ${money(totals.payableCents.me)}，合计 ${money(totals.capitalCents.me + totals.payableCents.me)}\n${personName('partner')}：正式出资 ${money(totals.capitalCents.partner)}，垫付待报销 ${money(totals.payableCents.partner)}，合计 ${money(totals.capitalCents.partner + totals.payableCents.partner)}\n有效记录 ${totals.activeCount} 笔`;
   try {
     if (navigator.share) await navigator.share({ title: '二姐小金库经营账摘要', text });
     else if (navigator.clipboard?.writeText) {

@@ -50,7 +50,38 @@ test('a sale records cash and profit only after subtracting sold stock cost', ()
   assert.equal(totals.salesCents, yuan('50'));
   assert.equal(totals.soldCostCents, yuan('20'));
   assert.equal(totals.profitCents, yuan('30'));
+  assert.equal(totals.recoveryCents, -yuan('10'), 'the remaining stock has not yet been covered by sales');
   assert.equal(totals.pendingCostCount, 0);
+  balanced(totals);
+});
+
+test('all-purchase recovery excludes partner deposits and counts stock refunds without double counting stock loss', () => {
+  let book = add(emptyBook(), 'deposit', '100', { person: 'me' });
+  assert.equal(summarize(book.entries).recoveryCents, 0);
+  book = add(book, 'purchase', '60', { source: 'treasury' });
+  assert.equal(summarize(book.entries).recoveryCents, -yuan('60'));
+  book = add(book, 'sale', '50', { source: 'partner', costCents: yuan('20') });
+  book = add(book, 'stock_loss', '5');
+  let totals = summarize(book.entries);
+  assert.equal(totals.profitCents, yuan('25'));
+  assert.equal(totals.inventoryCents, yuan('35'));
+  assert.equal(totals.recoveryCents, -yuan('10'));
+  assert.equal(totals.cashCents, yuan('40'), 'a partner-collected sale has not entered the treasury');
+
+  book = add(book, 'purchase_refund', '10', { source: 'treasury' });
+  book = add(book, 'expense', '5', { source: 'me' });
+  book = add(book, 'other_income', '5');
+  totals = summarize(book.entries);
+  assert.equal(totals.recoveryCents, 0);
+  assert.equal(totals.profitCents, yuan('25'));
+  assert.equal(totals.inventoryCents, yuan('25'));
+  assert.equal(totals.recoveryCents, totals.profitCents - totals.inventoryCents);
+  balanced(totals);
+
+  book = add(book, 'sale', '10', { source: 'treasury', costCents: yuan('5') });
+  totals = summarize(book.entries);
+  assert.equal(totals.recoveryCents, yuan('10'), 'additional sales move the whole-stall recovery above zero');
+  assert.equal(totals.recoveryCents, totals.profitCents - totals.inventoryCents);
   balanced(totals);
 });
 
@@ -63,6 +94,7 @@ test('a legacy sale with missing cost is visibly pending until one supplemental 
   assert.equal(totals.pendingCostCount, 1);
   assert.equal(totals.inventoryCents, yuan('50'));
   assert.equal(totals.profitCents, yuan('80'));
+  assert.equal(totals.recoveryCents, yuan('30'), 'revenue coverage remains knowable before sold cost is supplied');
   balanced(totals);
 
   book = add(book, 'sale_cost', '30', { saleId });
@@ -70,6 +102,7 @@ test('a legacy sale with missing cost is visibly pending until one supplemental 
   assert.equal(totals.pendingCostCount, 0);
   assert.equal(totals.inventoryCents, yuan('20'));
   assert.equal(totals.profitCents, yuan('50'));
+  assert.equal(totals.recoveryCents, yuan('30'), 'adding sold cost reallocates stock to profit but not total purchase recovery');
   balanced(totals);
 });
 

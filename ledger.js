@@ -446,6 +446,7 @@ export function summarize(entries) {
     expensesCents: 0,
     otherIncomeCents: 0,
     profitCents: 0,
+    recoveryCents: 0,
     pendingCostCount: 0,
     activeCount: 0,
   };
@@ -537,6 +538,10 @@ export function summarize(entries) {
   }
   result.inventoryCents = result.purchaseCents - result.purchaseRefundCents - result.soldCostCents - result.stockLossCents;
   result.profitCents = result.salesCents + result.otherIncomeCents - result.soldCostCents - result.expensesCents - result.stockLossCents;
+  // Revenue coverage of every net stock purchase and operating expense, including unsold stock.
+  // Partner deposits fund purchases; subtracting deposits again would double-count the same money.
+  result.recoveryCents = result.salesCents + result.otherIncomeCents
+    - result.purchaseCents + result.purchaseRefundCents - result.expensesCents;
   for (const item of fundingCases(entries)) {
     if (item.pendingCents > 0) {
       result.pendingFundingCount++;
