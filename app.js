@@ -7,7 +7,7 @@ import {
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
 const screens = ['home', 'entry', 'history', 'settings'];
-const advancedKinds = new Set(['other_income', 'sale_transfer', 'reimbursement', 'convert_advance', 'return_capital']);
+const advancedKinds = new Set(['sale_cost', 'purchase_refund', 'stock_loss', 'other_income', 'sale_transfer', 'reimbursement', 'convert_advance', 'return_capital']);
 const RECOVERY_KEY = 'erjie-vault-before-import-v1';
 let book = emptyBook();
 let storageReady = false;
@@ -71,7 +71,10 @@ function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 }
 function shortDate(value) { return value.replaceAll('-', '.'); }
-function compactMoney(cents) { return money(cents); }
+function pendingCostSaleIds() {
+  const supplemented = new Set(book.entries.filter(item => item.kind === 'sale_cost' && !item.voidedAt).map(item => item.saleId));
+  return new Set(book.entries.filter(item => item.kind === 'sale' && !item.voidedAt && item.costCents == null && !supplemented.has(item.id)).map(item => item.id));
+}
 
 function setScreen(name) {
   if (!screens.includes(name)) return;
@@ -91,21 +94,43 @@ function setScreen(name) {
 }
 
 function renderHome(totals, plan) {
+  const pending = totals.pendingCostCount > 0;
+  const profit = $('#profit-balance');
+  profit.textContent = pending ? '待核算' : money(totals.profitCents);
+  profit.classList.toggle('pending', pending);
+  profit.classList.toggle('positive', !pending && totals.profitCents > 0);
+  profit.classList.toggle('negative', !pending && totals.profitCents < 0);
+  const profitStatus = $('#profit-status');
+  profitStatus.textContent = pending ? `${totals.pendingCostCount} 笔待补成本` : totals.profitCents < 0 ? '累计亏损' : totals.profitCents > 0 ? '累计盈利' : '收支持平';
+  profitStatus.classList.toggle('pending', pending);
+  $('#profit-caption').textContent = pending
+    ? '有销售没填卖出商品的进价，盈亏与库存成本暂时不能准确计算。'
+    : '累计经营结果＝销售＋其他收入－已售商品成本－费用－报损；还没卖的货留在库存。';
+  $('#pending-cost-action').hidden = !pending;
   $('#cash-balance').textContent = money(totals.cashCents);
+  $('#inventory-balance').textContent = pending ? '待核算' : money(totals.inventoryCents);
+  $('#inventory-caption').textContent = pending ? '补齐销售成本后显示准确库存成本' : '按进货成本计算，未售出的货';
+  $('#receivable-total').textContent = money(totals.receivableCents.me + totals.receivableCents.partner);
+  $('#payable-total').textContent = money(plan.payableTotalCents);
   $('#sales-total').textContent = money(totals.salesCents);
-  $('#purchase-total').textContent = money(totals.purchaseCents);
-  $('#cash-caption').textContent = totals.activeCount ? `${totals.activeCount} 笔有效记录 · 每笔都算得清楚` : '记录第一笔入金，开始记账';
+  $('#other-income-hero').textContent = money(totals.otherIncomeCents);
+  $('#sold-cost-total').textContent = money(totals.soldCostCents);
+  $('#operating-cost-total').textContent = money(totals.expensesCents + totals.stockLossCents);
+  $('#purchase-total').textContent = money(totals.purchaseCents - totals.purchaseRefundCents);
+  $('#sold-cost-repeat').textContent = money(totals.soldCostCents);
+  $('#expense-total').textContent = money(totals.expensesCents + totals.stockLossCents);
+  $('#other-income-total').textContent = money(totals.otherIncomeCents);
   $('#me-label').textContent = personName('me');
   $('#partner-label').textContent = personName('partner');
   $('#me-capital').textContent = money(totals.capitalCents.me);
   $('#partner-capital').textContent = money(totals.capitalCents.partner);
-  const combined = totals.capitalCents.me + totals.capitalCents.partner;
-  const mePercent = combined ? totals.capitalCents.me / combined * 100 : 50;
-  $('#me-bar').style.width = `${mePercent}%`;
-  $('#partner-bar').style.width = `${100 - mePercent}%`;
+  $('#me-payable').textContent = money(totals.payableCents.me);
+  $('#partner-payable').textContent = money(totals.payableCents.partner);
+  $('#me-exposure').textContent = money(totals.capitalCents.me + totals.payableCents.me);
+  $('#partner-exposure').textContent = money(totals.capitalCents.partner + totals.payableCents.partner);
   $('#parity-note').textContent = plan.equalizeCents
-    ? `${personName(plan.lower)}实际出资少 ${money(plan.equalizeCents)}。等这笔钱真的存入金库后，再记录入金，就能追平五五。`
-    : '目前两人实际出资相同。';
+    ? `${personName(plan.lower)}正式净出资少 ${money(plan.equalizeCents)}。五五出资要按实际入金或双方确认的垫付转出资记录；待报销垫付暂不算出资。`
+    : '目前两人正式净出资相同；各自待报销垫付仍单独显示。';
 
   const needCash = plan.cashGapCents > 0;
   const status = $('#funding-status');
@@ -128,30 +153,32 @@ function renderHome(totals, plan) {
   $('#partner-due-label').textContent = `${personName('partner')}建议再存`;
   $('#me-due').textContent = money(plan.dueCents.me);
   $('#partner-due').textContent = money(plan.dueCents.partner);
-  const payable = $('#payable-note');
-  payable.hidden = plan.payableTotalCents === 0;
-  payable.textContent = `待报销：${personName('me')} ${money(totals.payableCents.me)}，${personName('partner')} ${money(totals.payableCents.partner)}。这笔待支付的钱已算入资金需求。`;
-  const receivable = $('#receivable-note');
-  receivable.hidden = plan.receivableTotalCents === 0;
-  receivable.textContent = `代收但还没转入金库的销售款：${personName('me')} ${money(totals.receivableCents.me)}，${personName('partner')} ${money(totals.receivableCents.partner)}。这笔钱暂未计入可用余额，转入后再登记。`;
+  $('#plan-payable-total').textContent = money(plan.payableTotalCents);
   const active = book.entries.filter(item => !item.voidedAt).sort(sortNewest);
+  const pendingCostIds = pendingCostSaleIds();
   $('#recent-list').innerHTML = active.length
-    ? active.slice(0, 4).map(entry => entryHtml(entry, false)).join('')
+    ? active.slice(0, 4).map(entry => entryHtml(entry, false, pendingCostIds)).join('')
     : '<div class="empty-state"><b>✦</b>这里还空着。<br>记下第一笔真实入金，账本就开始了。</div>';
 }
 
 function sortNewest(a, b) { return b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt); }
 
-function entryHtml(entry, detailed) {
+function entryHtml(entry, detailed, pendingCostIds) {
   const change = entryCashDelta(entry);
   const tone = change > 0 ? 'inflow' : change < 0 ? 'outflow' : 'neutral';
   let title = ENTRY_LABELS[entry.kind];
   let subtitle = shortDate(entry.date);
   if (entry.kind === 'deposit') title = `${personName(entry.person)}入金`;
-  if (['purchase', 'expense'].includes(entry.kind)) {
-    subtitle += ` · ${entry.source === 'treasury' ? '金库付款' : `${personName(entry.source)}个人垫付`}`;
+  if (['purchase', 'expense', 'purchase_refund'].includes(entry.kind)) {
+    subtitle += ` · ${entry.source === 'treasury' ? '金库' : personName(entry.source)}${entry.kind === 'purchase_refund' ? '收退款' : entry.source === 'treasury' ? '付款' : '个人垫付'}`;
   } else if (entry.kind === 'sale') {
     subtitle += ` · ${entry.source == null || entry.source === 'treasury' ? '已入金库' : `${personName(entry.source)}代收待转入`}`;
+    if (entry.costCents != null) subtitle += ` · 已售成本 ${money(entry.costCents)}`;
+    else if (pendingCostIds.has(entry.id)) subtitle += ' · 成本待补';
+    else if (!entry.voidedAt) subtitle += ' · 成本已补录';
+  } else if (entry.kind === 'sale_cost') {
+    const sale = book.entries.find(item => item.id === entry.saleId);
+    subtitle += sale ? ` · 对应 ${shortDate(sale.date)} 销售 ${money(sale.amountCents)}` : '';
   } else if (['sale_transfer', 'reimbursement', 'convert_advance', 'return_capital'].includes(entry.kind)) {
     subtitle += ` · ${personName(entry.person)}`;
   }
@@ -162,23 +189,27 @@ function entryHtml(entry, detailed) {
     <span class="entry-icon" aria-hidden="true">${symbol}</span>
     <div class="entry-main"><div class="entry-line"><span class="entry-title">${escapeHtml(title)}</span><strong class="entry-amount">${amountText}</strong></div>
       <div class="entry-meta">${escapeHtml(subtitle)}</div>${entry.note ? `<div class="entry-note">${escapeHtml(entry.note)}</div>` : ''}
+      ${entry.kind === 'sale' && pendingCostIds.has(entry.id) ? `<button type="button" class="cost-button" data-fill-cost-id="${escapeHtml(entry.id)}">补这笔销售的进货成本 →</button>` : ''}
       ${detailed && !entry.voidedAt ? `<button type="button" class="void-button" data-void-id="${escapeHtml(entry.id)}">记错了？作废这笔</button>` : ''}
     </div></article>`;
 }
 
 function renderHistory(totals) {
-  $('#history-balance').textContent = money(totals.cashCents);
+  $('#history-summary-label').textContent = totals.pendingCostCount ? '累计经营盈亏 · 待核算' : '累计经营盈亏';
+  $('#history-balance').textContent = totals.pendingCostCount ? '待核算' : money(totals.profitCents);
   $('#history-count').textContent = `${totals.activeCount} 笔有效记录 · ${book.entries.length - totals.activeCount} 笔作废`;
   const filter = $('#history-filter').value;
+  const pendingCostIds = pendingCostSaleIds();
   const filtered = book.entries.filter(entry => {
     if (filter === 'all') return true;
     if (filter === 'voided') return Boolean(entry.voidedAt);
+    if (filter === 'pending_cost') return pendingCostIds.has(entry.id);
     if (filter === 'other') return advancedKinds.has(entry.kind);
     return entry.kind === filter;
   }).sort(sortNewest);
   const visible = filtered.slice(0, 250);
   $('#history-list').innerHTML = visible.length
-    ? visible.map(entry => entryHtml(entry, true)).join('') + (filtered.length > visible.length ? `<p class="field-help">这里只显示最近 250 笔；导出明细表可查看全部 ${filtered.length} 笔。</p>` : '')
+    ? visible.map(entry => entryHtml(entry, true, pendingCostIds)).join('') + (filtered.length > visible.length ? `<p class="field-help">这里只显示最近 250 笔；导出明细表可查看全部 ${filtered.length} 笔。</p>` : '')
     : '<div class="empty-state"><b>○</b>这个分类下还没有记录。</div>';
 }
 
@@ -207,6 +238,14 @@ function renderSettings() {
   $('#entry-source').querySelector('[value="partner"]').textContent = `${personName('partner')}个人垫付`;
   $('#sale-source').querySelector('[value="me"]').textContent = `${personName('me')}先代收，还没转入金库`;
   $('#sale-source').querySelector('[value="partner"]').textContent = `${personName('partner')}先代收，还没转入金库`;
+  const pendingIds = pendingCostSaleIds();
+  const pendingSales = book.entries.filter(item => pendingIds.has(item.id)).sort(sortNewest);
+  const costSelect = $('#sale-cost-sale');
+  const previouslySelected = costSelect.value;
+  costSelect.innerHTML = pendingSales.length
+    ? pendingSales.map(item => `<option value="${escapeHtml(item.id)}">${shortDate(item.date)} · 销售 ${money(item.amountCents)}${item.note ? ` · ${escapeHtml(item.note.slice(0, 22))}` : ''}</option>`).join('')
+    : '<option value="">没有待补成本的销售</option>';
+  if (pendingSales.some(item => item.id === previouslySelected)) costSelect.value = previouslySelected;
 }
 
 function render() {
@@ -222,21 +261,33 @@ function setKind(kind) {
   $$('.kind-tab').forEach(button => button.classList.toggle('is-selected', button.dataset.kind === kind));
   $('#more-kind').value = advancedKinds.has(kind) ? kind : '';
   $('#deposit-fields').hidden = kind !== 'deposit';
-  $('#source-fields').hidden = !['purchase', 'expense'].includes(kind);
+  $('#source-fields').hidden = !['purchase', 'expense', 'purchase_refund'].includes(kind);
   $('#sale-fields').hidden = kind !== 'sale';
+  $('#sale-cost-fields').hidden = kind !== 'sale_cost';
   $('#person-fields').hidden = !['sale_transfer', 'reimbursement', 'convert_advance', 'return_capital'].includes(kind);
+  $('#entry-date-row').hidden = kind === 'sale_cost';
+  const refund = kind === 'purchase_refund';
+  $('#source-label').textContent = refund ? '原付款来源（仅支持原路退回）' : '这笔钱从哪里付？';
+  $('#entry-source').querySelector('[value="treasury"]').textContent = refund ? '原金库付款 → 退回金库' : '从金库支付';
+  $('#entry-source').querySelector('[value="me"]').textContent = refund ? `原${personName('me')}垫付 → 退回本人` : `${personName('me')}个人垫付`;
+  $('#entry-source').querySelector('[value="partner"]').textContent = refund ? `原${personName('partner')}垫付 → 退回本人` : `${personName('partner')}个人垫付`;
+  $('#source-help').textContent = refund ? '按原进货付款来源原路退回。个人退款会抵减她的待报销款；若已报销或退到另一账户，请先核对后续款项，本版不能直接这样记。' : '个人垫付会记成金库待报销的钱；金库现金和出资额暂时不变。';
   const labels = {
     deposit: '这次实际存入多少？', purchase: '这次进货花了多少？', sale: '这次实际卖了多少？',
     expense: '这次实际支出多少？', other_income: '这次实际收到多少？',
+    sale_cost: '这次卖出的货，进价合计是多少？', purchase_refund: '这次退货退回多少进货款？', stock_loss: '这次损失的商品进货成本是多少？',
     sale_transfer: '这次实际转入金库多少？',
     reimbursement: '这次已报销多少？', convert_advance: '这次转为出资多少？', return_capital: '这次实际返还多少？',
   };
   const hints = {
     deposit: '只记已经收到的钱；对方入金不会自动算作你的入金。',
-    purchase: '金库付款会减少现金；个人垫付只增加待报销，不算已入金。',
-    sale: '销售款如果先进入某人的个人收款码，请选“代收”；尚未转入前，不能算成金库可用余额。',
+    purchase: '按进货成本登记入库，未售出的货留在库存；金库付款减少现金，个人付款增加待报销。',
+    sale: '销售款如果先进入个人收款码，请选“代收”。还需填这次卖掉的商品进价合计，才能算出经营盈亏。',
     expense: '例如摊位物料、运费和包装；个人垫付会成为待报销。',
-    other_income: '例如金库收到的进货退款；不要把合伙人出资记在这里。',
+    sale_cost: '先选对应销售，再填那次卖出的商品进价；日期会自动跟随原销售。真是零成本请明确填 0。',
+    purchase_refund: '只记供应商按原付款来源退回的进货款，不算经营收入；若退到其他账户，先人工核对。',
+    stock_loss: '例如损坏、遗失或赠送，填该批商品原进货成本；库存减少，同时计入经营损失。',
+    other_income: '只记与销售无关、确实属于店铺的经营收入；合伙人入金和进货退款请用各自类型。',
     sale_transfer: '个人代收的销售款实际进入金库时再记；不能超过该人当前待转入金额。',
     reimbursement: '从金库实际付给垫付人的钱。不能超过金库现金或该人的待报销金额。',
     convert_advance: '双方决定不再报销这笔垫付时，才转为该人的实际出资；金库现金不变。',
@@ -256,13 +307,22 @@ function updateDepositMode() {
   if (!paired) $('#paired-confirm').checked = false;
 }
 
+function toggleSaleCostInput() {
+  const later = $('#sale-cost-later').checked;
+  $('#sale-cost').disabled = later;
+  if (later) $('#sale-cost').value = '';
+}
+
 function submitEntry(event) {
   event.preventDefault();
   if (!storageReady) return showToast('当前无法安全保存，请先恢复存储。');
   try {
     const kind = $('#entry-kind').value;
-    const amountCents = parseYuan($('#entry-amount').value);
-    const date = $('#entry-date').value;
+    if (kind === 'sale_cost' && $('#entry-amount').value.trim() === '') throw new Error('请填写已售商品进价；确实零成本请填 0。');
+    const amountCents = kind === 'sale_cost' ? parseNonnegativeYuan($('#entry-amount').value) : parseYuan($('#entry-amount').value);
+    const selectedSale = kind === 'sale_cost' ? book.entries.find(item => item.id === $('#sale-cost-sale').value && !item.voidedAt) : null;
+    if (kind === 'sale_cost' && !selectedSale) throw new Error('请先选择要补成本的销售记录。');
+    const date = selectedSale?.date ?? $('#entry-date').value;
     if (!date || date > todayLocal()) throw new Error('请选择真实发生的日期，不能记未来的流水。');
     const note = $('#entry-note').value.trim();
     let entries;
@@ -273,11 +333,18 @@ function submitEntry(event) {
     } else {
       const person = kind === 'deposit' ? $('#entry-person').value
         : ['sale_transfer', 'reimbursement', 'convert_advance', 'return_capital'].includes(kind) ? $('#entry-target-person').value : null;
-      const source = ['purchase', 'expense'].includes(kind) ? $('#entry-source').value : kind === 'sale' ? $('#sale-source').value : null;
-      entries = [newEntry(kind, amountCents, { person, source, date, note })];
+      const source = ['purchase', 'expense', 'purchase_refund'].includes(kind) ? $('#entry-source').value : kind === 'sale' ? $('#sale-source').value : null;
+      let costCents;
+      if (kind === 'sale') {
+        const later = $('#sale-cost-later').checked;
+        if (!later && $('#sale-cost').value.trim() === '') throw new Error('请填这笔销售的商品进价；暂不知道就勾选稍后补录。');
+        costCents = later ? null : parseNonnegativeYuan($('#sale-cost').value);
+      }
+      entries = [newEntry(kind, amountCents, { person, source, date, note, costCents, saleId: selectedSale?.id })];
     }
     writeBook(addEntries(book, entries));
     $('#entry-form').reset();
+    toggleSaleCostInput();
     $('#entry-date').value = todayLocal();
     setKind(kind);
     setScreen('home');
@@ -365,22 +432,36 @@ async function exportCsv() {
   if (!storageReady) return showToast('当前账本未安全载入，不能导出。');
   const totals = summarize(book.entries);
   const exportedAt = new Date().toLocaleString('zh-CN');
-  const heading = ['日期', '类型', '金额（元）', '合伙人', '付款或收款去向', '备注', '状态', '录入时间', '作废时间', '记录编号'];
+  const heading = ['日期', '类型', '金额（元）', '已售成本（元）', '关联销售编号', '合伙人', '付款或收款去向', '备注', '状态', '录入时间', '作废时间', '记录编号'];
   const rows = [...book.entries].sort(sortNewest);
+  const supplementedCosts = new Map(book.entries.filter(entry => entry.kind === 'sale_cost' && !entry.voidedAt).map(entry => [entry.saleId, entry.amountCents]));
   const overview = [
     ['二姐小金库 · 账目摘要'],
     ['导出时间', exportedAt],
+    ['累计经营盈亏（元）', totals.pendingCostCount ? `待核算：${totals.pendingCostCount} 笔销售未补成本` : (totals.profitCents / 100).toFixed(2)],
+    ['累计销售（元）', (totals.salesCents / 100).toFixed(2)],
+    ['已售商品成本（元）', (totals.soldCostCents / 100).toFixed(2)],
+    ['其他经营费用及报损（元）', ((totals.expensesCents + totals.stockLossCents) / 100).toFixed(2)],
+    ['其他经营收入（元）', (totals.otherIncomeCents / 100).toFixed(2)],
     ['金库可用余额（元）', (totals.cashCents / 100).toFixed(2)],
-    [`${personName('me')}累计净出资（元）`, (totals.capitalCents.me / 100).toFixed(2)],
-    [`${personName('partner')}累计净出资（元）`, (totals.capitalCents.partner / 100).toFixed(2)],
-    ['待报销合计（元）', ((totals.payableCents.me + totals.payableCents.partner) / 100).toFixed(2)],
+    ['未售商品进货成本（元）', totals.pendingCostCount ? '待核算' : (totals.inventoryCents / 100).toFixed(2)],
+    [`${personName('me')}正式净出资（元）`, (totals.capitalCents.me / 100).toFixed(2)],
+    [`${personName('me')}垫付待报销（元）`, (totals.payableCents.me / 100).toFixed(2)],
+    [`${personName('me')}出资及待报销合计（元）`, ((totals.capitalCents.me + totals.payableCents.me) / 100).toFixed(2)],
+    [`${personName('partner')}正式净出资（元）`, (totals.capitalCents.partner / 100).toFixed(2)],
+    [`${personName('partner')}垫付待报销（元）`, (totals.payableCents.partner / 100).toFixed(2)],
+    [`${personName('partner')}出资及待报销合计（元）`, ((totals.capitalCents.partner + totals.payableCents.partner) / 100).toFixed(2)],
     ['代收待转入合计（元）', ((totals.receivableCents.me + totals.receivableCents.partner) / 100).toFixed(2)],
     [],
   ];
   const lines = [...overview, heading, ...rows.map(entry => [
     entry.date, ENTRY_LABELS[entry.kind], (entry.amountCents / 100).toFixed(2),
+    entry.kind === 'sale' ? entry.costCents != null ? (entry.costCents / 100).toFixed(2)
+      : supplementedCosts.has(entry.id) ? (supplementedCosts.get(entry.id) / 100).toFixed(2)
+        : entry.voidedAt ? '' : '待补录' : '',
+    entry.saleId ?? '',
     entry.person ? personName(entry.person) : '',
-    entry.source === 'treasury' || (entry.kind === 'sale' && entry.source == null) ? '金库' : entry.source ? `${personName(entry.source)}${entry.kind === 'sale' ? '代收待转入' : '个人垫付'}` : '',
+    entry.source === 'treasury' || (entry.kind === 'sale' && entry.source == null) ? '金库' : entry.source ? `${personName(entry.source)}${entry.kind === 'sale' ? '代收待转入' : entry.kind === 'purchase_refund' ? '收到进货退款' : '个人垫付'}` : '',
     entry.note, entry.voidedAt ? '已作废' : '有效', entry.createdAt, entry.voidedAt ?? '', entry.id,
   ])];
   try {
@@ -392,12 +473,14 @@ async function exportCsv() {
 async function shareSummary() {
   if (!storageReady) return showToast('当前账本未安全载入。');
   const totals = summarize(book.entries);
-  const text = `二姐小金库 · ${todayLocal()}\n金库可用余额 ${money(totals.cashCents)}\n${personName('me')}累计净出资 ${money(totals.capitalCents.me)}\n${personName('partner')}累计净出资 ${money(totals.capitalCents.partner)}\n待报销合计 ${money(totals.payableCents.me + totals.payableCents.partner)}\n代收待转入 ${money(totals.receivableCents.me + totals.receivableCents.partner)}\n有效记录 ${totals.activeCount} 笔`;
+  const profitText = totals.pendingCostCount ? `待核算（${totals.pendingCostCount} 笔销售未补成本）` : money(totals.profitCents);
+  const inventoryText = totals.pendingCostCount ? '待核算' : money(totals.inventoryCents);
+  const text = `二姐小金库 · ${todayLocal()}\n累计经营盈亏 ${profitText}\n累计销售 ${money(totals.salesCents)}｜已售商品成本 ${money(totals.soldCostCents)}\n金库可用现金 ${money(totals.cashCents)}｜未售商品成本 ${inventoryText}\n个人代收待转入 ${money(totals.receivableCents.me + totals.receivableCents.partner)}\n${personName('me')}：正式出资 ${money(totals.capitalCents.me)}，垫付待报销 ${money(totals.payableCents.me)}，合计 ${money(totals.capitalCents.me + totals.payableCents.me)}\n${personName('partner')}：正式出资 ${money(totals.capitalCents.partner)}，垫付待报销 ${money(totals.payableCents.partner)}，合计 ${money(totals.capitalCents.partner + totals.payableCents.partner)}\n有效记录 ${totals.activeCount} 笔`;
   try {
-    if (navigator.share) await navigator.share({ title: '二姐小金库余额摘要', text });
+    if (navigator.share) await navigator.share({ title: '二姐小金库经营账摘要', text });
     else if (navigator.clipboard?.writeText) {
       await navigator.clipboard.writeText(text);
-      showToast('余额摘要已复制，可以发给合伙人');
+      showToast('经营账摘要已复制，可以发给合伙人');
     } else window.prompt('复制下面的摘要发给合伙人：', text);
   } catch (error) {
     if (error.name !== 'AbortError') showToast('暂时无法分享，请试试导出明细表。');
@@ -482,15 +565,28 @@ function bindEvents() {
   });
   document.addEventListener('click', event => {
     const nav = event.target.closest('[data-nav]');
-    if (nav) setScreen(nav.dataset.nav);
+    if (nav) {
+      if (nav.dataset.historyFilter) {
+        $('#history-filter').value = nav.dataset.historyFilter;
+        renderHistory(summarize(book.entries));
+      }
+      setScreen(nav.dataset.nav);
+    }
     const quick = event.target.closest('[data-entry-kind]');
     if (quick) { setKind(quick.dataset.entryKind); setScreen('entry'); }
+    const fillCost = event.target.closest('[data-fill-cost-id]');
+    if (fillCost) {
+      setKind('sale_cost');
+      $('#sale-cost-sale').value = fillCost.dataset.fillCostId;
+      setScreen('entry');
+    }
     const kindButton = event.target.closest('[data-kind]');
     if (kindButton) setKind(kindButton.dataset.kind);
     const voidButton = event.target.closest('[data-void-id]');
     if (voidButton) handleVoid(voidButton.dataset.voidId);
   });
   $$('input[name="depositMode"]').forEach(input => input.addEventListener('change', updateDepositMode));
+  $('#sale-cost-later').addEventListener('change', toggleSaleCostInput);
   $('#more-kind').addEventListener('change', event => { if (event.target.value) setKind(event.target.value); });
   $('#entry-form').addEventListener('submit', submitEntry);
   $('#settings-form').addEventListener('submit', submitSettings);
@@ -507,6 +603,7 @@ $('#entry-date').value = todayLocal();
 bindEvents();
 loadBook();
 setKind('deposit');
+toggleSaleCostInput();
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   navigator.serviceWorker.register('./sw.js').catch(() => {});
 }

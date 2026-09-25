@@ -6,9 +6,12 @@ export const ENTRY_LABELS = {
   deposit: '合伙人入金',
   purchase: '进货',
   sale: '销售记录',
+  sale_cost: '补录已售成本',
   sale_transfer: '代收销售款转入金库',
   expense: '其他支出',
   other_income: '其他收入',
+  purchase_refund: '进货退货退款',
+  stock_loss: '货品报损',
   reimbursement: '报销垫付',
   convert_advance: '垫付转出资',
   return_capital: '返还出资',
@@ -85,7 +88,9 @@ function realDate(value) {
 function assertEntry(entry) {
   if (!entry || typeof entry !== 'object' || Array.isArray(entry)) throw new Error('账本中有损坏的记录。');
   if (typeof entry.id !== 'string' || !entry.id || !ENTRY_KINDS.has(entry.kind)) throw new Error('账本中有无法识别的记录。');
-  if (!positiveCents(entry.amountCents) || !realDate(entry.date)) throw new Error('账本中有金额或日期错误的记录。');
+  if (!(entry.kind === 'sale_cost' ? nonnegativeCents(entry.amountCents) : positiveCents(entry.amountCents)) || !realDate(entry.date)) {
+    throw new Error('账本中有金额或日期错误的记录。');
+  }
   if (typeof entry.createdAt !== 'string' || !Number.isFinite(Date.parse(entry.createdAt))) throw new Error('账本中有录入时间错误的记录。');
   if (typeof entry.note !== 'string' || entry.note.length > 160) throw new Error('账本中有备注错误的记录。');
   if (entry.voidedAt !== null && entry.voidedAt !== undefined &&
@@ -95,12 +100,18 @@ function assertEntry(entry) {
   if (['deposit', 'sale_transfer', 'reimbursement', 'convert_advance', 'return_capital'].includes(entry.kind) && !PEOPLE.includes(entry.person)) {
     throw new Error('账本中有合伙人信息错误的记录。');
   }
-  if (['purchase', 'expense'].includes(entry.kind) && !CASH_SOURCES.has(entry.source)) {
+  if (['purchase', 'expense', 'purchase_refund'].includes(entry.kind) && !CASH_SOURCES.has(entry.source)) {
     throw new Error('账本中有付款来源错误的记录。');
   }
   // Earlier v1 sale records had no source field and meant money already entered the vault.
   if (entry.kind === 'sale' && entry.source != null && !CASH_SOURCES.has(entry.source)) {
     throw new Error('账本中有付款来源错误的记录。');
+  }
+  if (entry.kind === 'sale' && entry.costCents != null && !nonnegativeCents(entry.costCents)) {
+    throw new Error('账本中有已售商品成本错误的记录。');
+  }
+  if (entry.kind === 'sale_cost' && (typeof entry.saleId !== 'string' || !entry.saleId)) {
+    throw new Error('补录成本缺少对应销售。');
   }
 }
 
@@ -126,16 +137,41 @@ export function assertBook(book) {
     if (ids.has(entry.id)) throw new Error('账本中有重复记录。');
     ids.add(entry.id);
   }
+  const activeSales = new Map(book.entries.filter(entry => entry.kind === 'sale' && !entry.voidedAt).map(entry => [entry.id, entry]));
+  const supplementedSales = new Set();
+  const purchasesBySource = { treasury: 0, me: 0, partner: 0 };
+  const refundsBySource = { treasury: 0, me: 0, partner: 0 };
+  for (const entry of book.entries) {
+    if (!entry.voidedAt && entry.kind === 'purchase') purchasesBySource[entry.source] += entry.amountCents;
+    if (!entry.voidedAt && entry.kind === 'purchase_refund') refundsBySource[entry.source] += entry.amountCents;
+    if (entry.kind !== 'sale_cost' || entry.voidedAt) continue;
+    const sale = activeSales.get(entry.saleId);
+    if (!sale || sale.costCents != null || supplementedSales.has(entry.saleId)) {
+      throw new Error('补录成本必须对应一笔尚未核算成本的有效销售，且只能补录一次。');
+    }
+    supplementedSales.add(entry.saleId);
+  }
+  for (const source of CASH_SOURCES) {
+    if (refundsBySource[source] > purchasesBySource[source]) {
+      throw new Error('退货退款不能超过相同付款来源的有效进货金额。');
+    }
+  }
   if (book.lastBackupAt !== null && book.lastBackupAt !== undefined &&
       (typeof book.lastBackupAt !== 'string' || !Number.isFinite(Date.parse(book.lastBackupAt)))) {
     throw new Error('账本备份时间无效。');
   }
   const totals = summarize(book.entries);
   if (totals.cashCents < 0) throw new Error('金库余额不能小于零，请检查漏记的入金或垫付。');
+  if (totals.inventoryCents < 0) throw new Error('已售、退货或报损的成本不能超过已记录的进货成本，请先补记进货。');
   for (const person of PEOPLE) {
     if (totals.capitalCents[person] < 0) throw new Error('返还出资不能超过该人累计净出资。');
     if (totals.payableCents[person] < 0) throw new Error('报销或转出资不能超过该人的待报销金额。');
     if (totals.receivableCents[person] < 0) throw new Error('转入金额不能超过该人的待转入销售款。');
+  }
+  const assets = totals.cashCents + totals.inventoryCents + totals.receivableCents.me + totals.receivableCents.partner;
+  const claims = totals.capitalCents.me + totals.capitalCents.partner + totals.payableCents.me + totals.payableCents.partner + totals.profitCents;
+  if (!Number.isSafeInteger(assets) || !Number.isSafeInteger(claims) || assets !== claims) {
+    throw new Error('账本资产与出资、垫付和经营盈亏无法对平，请检查记录。');
   }
   return book;
 }
@@ -152,13 +188,23 @@ export function summarize(entries) {
     capitalCents: { me: 0, partner: 0 },
     payableCents: { me: 0, partner: 0 },
     receivableCents: { me: 0, partner: 0 },
+    personalAdvanceCents: { me: 0, partner: 0 },
+    reimbursedCents: { me: 0, partner: 0 },
+    convertedAdvanceCents: { me: 0, partner: 0 },
     depositsCents: 0,
     purchaseCents: 0,
+    purchaseRefundCents: 0,
     salesCents: 0,
+    soldCostCents: 0,
+    inventoryCents: 0,
+    stockLossCents: 0,
     expensesCents: 0,
     otherIncomeCents: 0,
+    profitCents: 0,
+    pendingCostCount: 0,
     activeCount: 0,
   };
+  const supplementedSales = new Set(entries.filter(entry => entry.kind === 'sale_cost' && !entry.voidedAt).map(entry => entry.saleId));
   for (const entry of entries) {
     if (entry.voidedAt) continue;
     const amount = entry.amountCents;
@@ -173,6 +219,12 @@ export function summarize(entries) {
         if (entry.source == null || entry.source === 'treasury') result.cashCents += amount;
         else result.receivableCents[entry.source] += amount;
         result.salesCents += amount;
+        if (entry.costCents == null) {
+          if (!supplementedSales.has(entry.id)) result.pendingCostCount++;
+        } else result.soldCostCents += entry.costCents;
+        break;
+      case 'sale_cost':
+        result.soldCostCents += amount;
         break;
       case 'sale_transfer':
         result.receivableCents[entry.person] -= amount;
@@ -187,15 +239,28 @@ export function summarize(entries) {
         if (entry.kind === 'purchase') result.purchaseCents += amount;
         else result.expensesCents += amount;
         if (entry.source === 'treasury') result.cashCents -= amount;
-        else result.payableCents[entry.source] += amount;
+        else {
+          result.payableCents[entry.source] += amount;
+          result.personalAdvanceCents[entry.source] += amount;
+        }
+        break;
+      case 'purchase_refund':
+        result.purchaseRefundCents += amount;
+        if (entry.source === 'treasury') result.cashCents += amount;
+        else result.payableCents[entry.source] -= amount;
+        break;
+      case 'stock_loss':
+        result.stockLossCents += amount;
         break;
       case 'reimbursement':
         result.cashCents -= amount;
         result.payableCents[entry.person] -= amount;
+        result.reimbursedCents[entry.person] += amount;
         break;
       case 'convert_advance':
         result.payableCents[entry.person] -= amount;
         result.capitalCents[entry.person] += amount;
+        result.convertedAdvanceCents[entry.person] += amount;
         break;
       case 'return_capital':
         result.cashCents -= amount;
@@ -203,6 +268,8 @@ export function summarize(entries) {
         break;
     }
   }
+  result.inventoryCents = result.purchaseCents - result.purchaseRefundCents - result.soldCostCents - result.stockLossCents;
+  result.profitCents = result.salesCents + result.otherIncomeCents - result.soldCostCents - result.expensesCents - result.stockLossCents;
   return result;
 }
 
@@ -246,6 +313,8 @@ export function newEntry(kind, amountCents, options = {}) {
     note: String(options.note ?? '').trim(),
     person: options.person ?? null,
     source: options.source ?? null,
+    ...(kind === 'sale' ? { costCents: options.costCents ?? null } : {}),
+    ...(kind === 'sale_cost' ? { saleId: options.saleId ?? null } : {}),
     groupId: options.groupId ?? null,
     createdAt: new Date().toISOString(),
     voidedAt: null,
@@ -265,6 +334,11 @@ export function voidEntry(book, id) {
   const entry = next.entries.find(item => item.id === id);
   if (!entry || entry.voidedAt) throw new Error('这笔记录已经作废或不存在。');
   entry.voidedAt = new Date().toISOString();
+  if (entry.kind === 'sale') {
+    for (const linked of next.entries) {
+      if (linked.kind === 'sale_cost' && linked.saleId === entry.id && !linked.voidedAt) linked.voidedAt = entry.voidedAt;
+    }
+  }
   return assertBook(next);
 }
 
@@ -277,6 +351,7 @@ export function updateSettings(book, settings) {
 export function entryCashDelta(entry) {
   if (entry.voidedAt) return 0;
   if (['deposit', 'other_income', 'sale_transfer'].includes(entry.kind)) return entry.amountCents;
+  if (entry.kind === 'purchase_refund' && entry.source === 'treasury') return entry.amountCents;
   if (entry.kind === 'sale' && (entry.source == null || entry.source === 'treasury')) return entry.amountCents;
   if (['reimbursement', 'return_capital'].includes(entry.kind)) return -entry.amountCents;
   if (['purchase', 'expense'].includes(entry.kind) && entry.source === 'treasury') return -entry.amountCents;

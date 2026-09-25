@@ -18,7 +18,7 @@
 
 * { box-sizing: border-box; }
 html { background: #f4f8f7; scroll-behavior: smooth; }
-body { margin: 0; color: var(--ink); min-width: 320px; background: radial-gradient(circle at 86% -10%, #e4f4f2 0, transparent 35%), radial-gradient(circle at 0 35%, #fff7ee 0, transparent 35%), #f4f8f7; }
+body { margin: 0; color: var(--ink); background: radial-gradient(circle at 86% -10%, #e4f4f2 0, transparent 35%), radial-gradient(circle at 0 35%, #fff7ee 0, transparent 35%), #f4f8f7; }
 button, input, select { font: inherit; }
 button { cursor: pointer; }
 button:disabled { cursor: not-allowed; opacity: .52; }
@@ -60,6 +60,57 @@ h2 { font-size: 20px; margin-bottom: 0; letter-spacing: -.04em; }
 .metric-icon { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 10px; font-size: 18px; }
 .metric-icon.blue { background: var(--blue); color: #397c8e; }
 .metric-icon.peach { background: var(--peach); color: #c37f69; }
+.profit-card { position: relative; overflow: hidden; padding: 21px 21px 17px; border: 1px solid #c6e2df; border-radius: 26px; background: linear-gradient(132deg, #daf0f0 0%, #e7f5ec 72%, #f3f4df 100%); box-shadow: var(--shadow); }
+.profit-card::before { content: ""; position: absolute; width: 220px; height: 220px; right: -105px; top: -145px; border: 1px solid rgba(56, 131, 137, .16); border-radius: 50%; pointer-events: none; }
+.profit-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; position: relative; }
+.profit-top > span:first-child { color: #386d74; font-size: 13px; font-weight: 780; }
+.profit-status { flex: 0 0 auto; border-radius: 100px; padding: 6px 9px; color: #417b63; background: rgba(255,255,255,.7); font-size: 10px; font-weight: 800; }
+.profit-status.pending { color: #a55d41; background: #fff3e8; }
+.profit-number { display: block; position: relative; margin: 12px 0 7px; font-size: clamp(39px, 10.2vw, 58px); line-height: 1.1; letter-spacing: -.065em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.profit-number.positive { color: #2e7963; }
+.profit-number.negative { color: #ad654f; }
+.profit-number.pending { color: #376a73; font-size: clamp(32px, 8.2vw, 47px); letter-spacing: -.035em; }
+.profit-caption { position: relative; color: #56787a; font-size: 11px; line-height: 1.5; margin: 0 0 14px; }
+.profit-breakdown { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 12px; row-gap: 10px; padding-top: 13px; border-top: 1px solid rgba(74, 136, 134, .18); }
+.profit-breakdown div { min-width: 0; }
+.profit-breakdown span { display: block; color: #608083; font-size: 10px; white-space: nowrap; }
+.profit-breakdown strong { display: block; margin-top: 4px; font-size: clamp(12px, 3.5vw, 17px); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.profit-action { width: 100%; margin-top: 12px; padding: 9px 11px; border: 0; border-radius: 11px; background: #fff3e6; color: #9c5f42; text-align: left; font-size: 11px; font-weight: 750; }
+.finance-heading { padding-top: 22px; }
+.position-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+.position-card { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; min-height: 122px; padding: 13px 13px 11px; border: 1px solid var(--line); border-radius: 19px; background: #fff; box-shadow: var(--shadow); }
+.position-card.debt { border-color: #f2d9c9; background: #fff6ee; }
+.position-symbol { display: grid; place-items: center; width: 27px; height: 27px; margin-bottom: 7px; border-radius: 9px; font-size: 16px; font-weight: 700; }
+.position-symbol.teal { background: #e3f2f2; color: #387681; }
+.position-symbol.mint { background: #e8f4e6; color: #5c8465; }
+.position-symbol.blue { background: #e9f1fb; color: #587ba1; }
+.position-symbol.coral { background: #fae5d9; color: #be7655; }
+.position-card > span:nth-child(2) { color: #617b7e; font-size: 10px; font-weight: 650; }
+.position-card strong { margin-top: 4px; color: var(--ink); font-size: clamp(16px, 4.5vw, 23px); letter-spacing: -.045em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.position-card.debt strong { color: #a96145; }
+.position-card small { margin-top: auto; padding-top: 5px; color: var(--muted); font-size: 9px; }
+.card-link { margin-top: auto; padding: 5px 0 0; border: 0; background: transparent; color: #4c8390; font-size: 10px; font-weight: 750; text-align: left; }
+.position-card.debt .card-link { color: #a96b4e; }
+.partner-panel, .reconciliation-panel { padding: 19px; margin-bottom: 14px; }
+.panel-intro { margin: 10px 0 14px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.partner-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.partner-card { min-width: 0; padding: 13px; border: 1px solid #d9e9e8; border-radius: 16px; background: #f6fbfa; }
+.partner-card + .partner-card { border-color: #f2e1da; background: #fffbf8; }
+.partner-name { display: block; color: #376e78; font-size: 13px; font-weight: 780; overflow-wrap: anywhere; }
+.partner-card + .partner-card .partner-name { color: #a76f61; }
+.partner-total-label { display: block; margin-top: 12px; color: #73898a; font-size: 9px; }
+.partner-total { display: block; margin: 3px 0 12px; font-size: clamp(16px, 4.4vw, 22px); line-height: 1.15; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.partner-line { display: flex; justify-content: space-between; gap: 5px; margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(80, 131, 131, .1); font-size: 10px; line-height: 1.3; }
+.partner-line span { color: var(--muted); }
+.partner-line b { color: #36585d; font-size: 10px; font-variant-numeric: tabular-nums; text-align: right; overflow-wrap: anywhere; }
+.partner-panel .soft-note { margin-top: 13px; }
+.planning-debt { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 15px; padding: 12px 13px; border: 1px solid #f2d9c6; border-radius: 13px; background: #fff4eb; }
+.planning-debt span { color: #98634a; font-size: 11px; font-weight: 700; }
+.planning-debt strong { color: #a65b3e; font-size: 19px; font-variant-numeric: tabular-nums; }
+.reconciliation-line { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); color: #648080; font-size: 12px; }
+.reconciliation-line:first-of-type { margin-top: 11px; }
+.reconciliation-line strong { color: #2f5358; font-size: 13px; font-variant-numeric: tabular-nums; }
+.reconciliation-panel > p { margin: 13px 0 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
 .panel { background: #fff; border: 1px solid var(--line); border-radius: 23px; box-shadow: var(--shadow); }
 .funding-panel, .planning-panel { padding: 21px; margin-bottom: 14px; }
 .panel-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
@@ -138,7 +189,9 @@ h2 { font-size: 20px; margin-bottom: 0; letter-spacing: -.04em; }
 .choice-stack span { line-height: 1.4; }
 .input-group { margin-top: 19px; }
 .input-group label span { font-weight: 400; color: var(--muted); }
-.input-group input, .input-group select, #entry-source, #entry-target-person, #entry-person { display: block; width: 100%; min-height: 45px; border: 1px solid #dce9e6; border-radius: 12px; background: #fff; color: var(--ink); padding: 9px 12px; font-size: 14px; }
+.input-group input, .input-group select, #entry-source, #entry-target-person, #entry-person, #sale-cost-sale { display: block; width: 100%; min-height: 45px; border: 1px solid #dce9e6; border-radius: 12px; background: #fff; color: var(--ink); padding: 9px 12px; font-size: 14px; }
+.input-group input:disabled { background: #f2f5f3; color: #95aaa8; }
+.cost-button { display: block; margin-top: 8px; padding: 6px 9px; border: 0; border-radius: 9px; background: #fff1e6; color: #9c623d; font-size: 10px; font-weight: 780; text-align: left; }
 .confirm-row { display: flex; align-items: flex-start; gap: 9px; margin-top: 13px; padding: 11px; background: #fff7eb; border-radius: 12px; color: #78593f; line-height: 1.55; font-size: 11px; }
 .confirm-row input { margin-top: 1px; }
 .field-help { color: var(--muted); font-size: 11px; line-height: 1.55; margin: 7px 0 0; }
