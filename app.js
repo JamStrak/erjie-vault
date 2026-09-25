@@ -22,6 +22,7 @@ function applyTheme(theme) {
   currentTheme = normalizeTheme(theme);
   document.documentElement.dataset.theme = currentTheme;
   document.querySelector('meta[name="theme-color"]').content = currentTheme === 'berry' ? '#fff5e5' : '#f8f4e8';
+  $('#current-theme-label').textContent = currentTheme === 'berry' ? '莓果红' : '桂花青玉';
   const icon = currentTheme === 'berry' ? './icon-berry.svg' : './icon.svg';
   $('#brand-icon').setAttribute('src', icon);
   $('#favicon').setAttribute('href', icon);
@@ -188,6 +189,13 @@ function setScreen(name) {
   window.scrollTo({ top: 0, behavior: 'instant' });
 }
 
+function updateEntryExtraSummary() {
+  const date = $('#entry-date').value;
+  const dateText = $('#entry-kind').value === 'sale_cost' ? '随原销售'
+    : date === todayLocal() ? '今天' : date ? date.slice(5).replace('-', '/') : '选日期';
+  $('#entry-date-preview').textContent = `${dateText}${$('#entry-note').value.trim() ? ' · 有备注' : ''}`;
+}
+
 function renderHome(totals, plan) {
   const pending = totals.pendingCostCount > 0;
   const profit = $('#profit-balance');
@@ -245,7 +253,12 @@ function renderHome(totals, plan) {
   $('#inventory-balance').textContent = pending ? '待核算' : money(totals.inventoryCents);
   $('#inventory-caption').textContent = pending ? '补齐销售成本后显示准确库存成本' : '按进货成本计算，未售出的货';
   $('#receivable-total').textContent = money(totals.receivableCents.me + totals.receivableCents.partner);
+  const receivableCents = totals.receivableCents.me + totals.receivableCents.partner;
+  $('#extra-money-indicator').textContent = receivableCents > 0 ? `待转入 ${money(receivableCents)}` : '查看明细';
+  $('.money-details').classList.toggle('has-action', receivableCents > 0);
+  $('#receivable-transfer-action').hidden = receivableCents <= 0;
   $('#payable-total').textContent = money(plan.payableTotalCents);
+  $('#reimbursement-action').hidden = plan.payableTotalCents <= 0;
   $('#sales-total').textContent = money(totals.salesCents);
   $('#other-income-hero').textContent = money(totals.otherIncomeCents);
   $('#sold-cost-total').textContent = money(totals.soldCostCents);
@@ -268,7 +281,9 @@ function renderHome(totals, plan) {
 
   const needCash = plan.cashGapCents > 0;
   const status = $('#funding-status');
-  status.textContent = plan.afterTransferGapCents > 0 ? '需要补钱' : needCash ? '先转入代收' : plan.equalizeCents ? '出资待追平' : '现金够用';
+  status.textContent = plan.afterTransferGapCents > 0 ? `需补 ${money(plan.afterTransferGapCents)}`
+    : needCash ? '先转入代收' : plan.equalizeCents ? '出资待追平'
+      : book.settings.plannedPurchaseCents || book.settings.reserveCents ? '暂不用补' : '未设计划';
   status.classList.toggle('needs-money', plan.afterTransferGapCents > 0);
   const planned = book.settings.plannedPurchaseCents;
   const reserve = book.settings.reserveCents;
@@ -292,11 +307,6 @@ function renderHome(totals, plan) {
   $('#plan-payable-total').textContent = money(plan.payableTotalCents);
   $('#plan-supplier-row').hidden = plan.supplierPayableCents <= 0;
   $('#plan-supplier-total').textContent = money(plan.supplierPayableCents);
-  const active = book.entries.filter(item => !item.voidedAt).sort(sortNewest);
-  const pendingCostIds = pendingCostSaleIds();
-  $('#recent-list').innerHTML = active.length
-    ? active.slice(0, 4).map(entry => entryHtml(entry, false, pendingCostIds)).join('')
-    : '<div class="empty-state"><b>✦</b>这里还空着。<br>记下第一笔真实入金，账本就开始了。</div>';
 }
 
 function sortNewest(a, b) { return b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt); }
@@ -350,12 +360,6 @@ function entryHtml(entry, detailed, pendingCostIds) {
 }
 
 function renderHistory(totals) {
-  $('#history-summary-label').textContent = totals.pendingCostCount ? '累计经营盈亏 · 待核算' : '累计经营盈亏';
-  const balance = $('#history-balance');
-  balance.textContent = totals.pendingCostCount ? '待核算' : money(totals.profitCents);
-  balance.classList.toggle('pending', Boolean(totals.pendingCostCount));
-  balance.classList.toggle('positive', !totals.pendingCostCount && totals.profitCents >= 0);
-  balance.classList.toggle('negative', !totals.pendingCostCount && totals.profitCents < 0);
   $('#history-count').textContent = `${totals.activeCount} 笔有效记录 · ${book.entries.length - totals.activeCount} 笔作废`;
   const filter = $('#history-filter').value;
   const pendingCostIds = pendingCostSaleIds();
@@ -382,6 +386,7 @@ function renderSettings() {
     ? `上次发起完整备份：${new Date(book.lastBackupAt).toLocaleString('zh-CN')}（请到“文件”确认）`
     : '尚未导出完整备份';
   const recovery = readRecovery();
+  $('#backup-more-note').textContent = recovery ? '可撤销上次导入' : 'CSV、摘要与恢复';
   $('#restore-pre-import').hidden = !recovery;
   $('#recovery-description').hidden = !recovery;
   if (recovery) {
@@ -463,6 +468,8 @@ function setKind(kind) {
     button.setAttribute('aria-pressed', String(selected));
   });
   $('#more-kind').value = advancedKinds.has(kind) ? kind : '';
+  $('#advanced-kinds').open = advancedKinds.has(kind);
+  $('#advanced-kind-name').textContent = advancedKinds.has(kind) ? ENTRY_LABELS[kind] : '退货、报销、代收款等';
   $('#deposit-fields').hidden = kind !== 'deposit';
   $('#source-fields').hidden = !['purchase', 'expense', 'purchase_refund'].includes(kind);
   $('#sale-fields').hidden = kind !== 'sale';
@@ -502,7 +509,7 @@ function setKind(kind) {
   $('#amount-label').textContent = labels[kind];
   $('#entry-hint').textContent = hints[kind];
   $('#entry-submit').textContent = `保存这笔${ENTRY_LABELS[kind]}`;
-  $('#person-help').textContent = hints[kind];
+  updateEntryExtraSummary();
   updateDepositMode();
   renderRefundCreditOptions();
   updateEntrySourceFields();
@@ -608,6 +615,8 @@ function submitEntry(event) {
     $('#entry-form').reset();
     toggleSaleCostInput();
     $('#entry-date').value = todayLocal();
+    $('#entry-extra').open = false;
+    $('.form-guide').open = false;
     setKind(kind);
     setScreen('home');
     showToast(newPending > 0 ? `已记下；新增待核实付款 ${money(newPending)}，稍后逐笔归类` : entries.length === 2 ? '两笔实际入金已记下' : '这笔账已记下');
@@ -876,6 +885,7 @@ function bindEvents() {
         renderHistory(summarize(book.entries));
       }
       setScreen(nav.dataset.nav);
+      if (nav.dataset.settingsOpen === 'planning') $('#planning-settings').open = true;
     }
     const quick = event.target.closest('[data-entry-kind]');
     if (quick) { setKind(quick.dataset.entryKind); setScreen('entry'); }
@@ -897,6 +907,8 @@ function bindEvents() {
   $('#entry-source').addEventListener('change', () => { renderRefundCreditOptions(); updateEntrySourceFields(); });
   $('#supplier-payment-source').addEventListener('change', updateEntrySourceFields);
   $('#entry-amount').addEventListener('input', updateEntrySourceFields);
+  $('#entry-date').addEventListener('change', updateEntryExtraSummary);
+  $('#entry-note').addEventListener('input', updateEntryExtraSummary);
   $('#review-kind').addEventListener('change', updateReviewFields);
   $('#review-reason').addEventListener('change', updateReviewFields);
   $('#review-receipt').addEventListener('change', updateReviewFields);
@@ -905,7 +917,6 @@ function bindEvents() {
   $('#review-form').addEventListener('submit', submitReview);
   $('#settings-form').addEventListener('submit', submitSettings);
   $('#history-filter').addEventListener('change', () => renderHistory(summarize(book.entries)));
-  $('#quick-backup').addEventListener('click', exportJson);
   $('#export-json').addEventListener('click', exportJson);
   $('#export-csv').addEventListener('click', exportCsv);
   $('#share-summary').addEventListener('click', shareSummary);
