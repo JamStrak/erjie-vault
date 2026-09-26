@@ -1,4 +1,4 @@
-export const THEME_STORAGE_KEY = 'erjie-vault-theme-v1';
+export const THEME_STORAGE_KEY = 'erjie-vault-multi-theme-v1';
 export const DEFAULT_THEME = 'jade';
 
 export function normalizeTheme(value) {

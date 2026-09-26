@@ -1,5 +1,5 @@
-export const STORAGE_KEY = 'erjie-vault-ledger-v1';
-export const BOOK_VERSION = 1;
+export const STORAGE_KEY = 'erjie-vault-multi-ledger-v2';
+export const BOOK_VERSION = 2;
 export const PEOPLE = ['me', 'partner'];
 
 export const ENTRY_LABELS = {
@@ -22,11 +22,49 @@ export const ENTRY_LABELS = {
 };
 
 const ENTRY_KINDS = new Set(Object.keys(ENTRY_LABELS));
-const CASH_SOURCES = new Set(['treasury', ...PEOPLE]);
-const PURCHASE_SOURCES = new Set([...CASH_SOURCES, 'supplier_credit']);
+const RESERVED_PERSON_IDS = new Set(['treasury', 'supplier_credit', 'prototype', ...Object.getOwnPropertyNames(Object.prototype)]);
 const REVIEWABLE_KINDS = new Set(['purchase', 'expense', 'supplier_payment']);
 const FUNDING_RESOLUTIONS = new Set(['funding_to_person', 'funding_to_supplier', 'funding_confirmed']);
 const MAX_CENTS = 99_999_999_999;
+
+function validPersonId(value) {
+  return typeof value === 'string' && /^[a-zA-Z][a-zA-Z0-9_-]{0,79}$/.test(value) && !RESERVED_PERSON_IDS.has(value);
+}
+
+function assertPeople(people) {
+  if (!Array.isArray(people) || people.length === 0 || new Set(people).size !== people.length || !people.every(validPersonId)) {
+    throw new Error('合伙人名单无效，请至少保留一位合伙人。');
+  }
+  return people;
+}
+
+function peopleFromNames(names, allowDuplicateNames = false) {
+  if (!names || typeof names !== 'object' || Array.isArray(names) ||
+      ![Object.prototype, null].includes(Object.getPrototypeOf(names))) throw new Error('合伙人名单无效。');
+  const people = assertPeople(Object.keys(names));
+  const usedNames = new Set();
+  for (const person of people) {
+    const name = names[person];
+    if (typeof name !== 'string' || [...name.trim()].length < 1 || [...name.trim()].length > 20) {
+      throw new Error('合伙人称呼须为 1 至 20 个字。');
+    }
+    const normalizedName = name.trim().normalize('NFC');
+    if (!allowDuplicateNames && usedNames.has(normalizedName)) throw new Error('合伙人称呼不能重复，请使用不同称呼。');
+    usedNames.add(normalizedName);
+  }
+  return people;
+}
+
+export function getPeople(book) {
+  return peopleFromNames(book?.settings?.names);
+}
+
+export function personHasHistory(book, person) {
+  return book.entries.some(entry => entry.person === person || entry.source === person);
+}
+
+const zeroByPerson = people => Object.fromEntries(people.map(person => [person, 0]));
+const sumByPerson = (amounts, people) => people.reduce((sum, person) => sum + amounts[person], 0);
 
 export function emptyBook() {
   return {
@@ -92,7 +130,10 @@ function realDate(value) {
   return parsed.getUTCFullYear() === year && parsed.getUTCMonth() + 1 === month && parsed.getUTCDate() === day;
 }
 
-function assertEntry(entry) {
+function assertEntry(entry, people = null) {
+  const isPerson = person => validPersonId(person) && (people === null || people.includes(person));
+  const isCashSource = source => source === 'treasury' || isPerson(source);
+  const isPurchaseSource = source => source === 'supplier_credit' || isCashSource(source);
   if (!entry || typeof entry !== 'object' || Array.isArray(entry)) throw new Error('账本中有损坏的记录。');
   if (typeof entry.id !== 'string' || !entry.id || !ENTRY_KINDS.has(entry.kind)) throw new Error('账本中有无法识别的记录。');
   if (!(entry.kind === 'sale_cost' ? nonnegativeCents(entry.amountCents) : positiveCents(entry.amountCents)) || !realDate(entry.date)) {
@@ -108,13 +149,15 @@ function assertEntry(entry) {
       (!entry.voidedAt || !Number.isSafeInteger(entry.voidedAtEntryCount) || entry.voidedAtEntryCount < 1)) {
     throw new Error('账本中有作废顺序错误的记录。');
   }
-  if (['deposit', 'sale_transfer', 'reimbursement', 'convert_advance', 'return_capital'].includes(entry.kind) && !PEOPLE.includes(entry.person)) {
+  if ((entry.person != null && !isPerson(entry.person)) ||
+      (['deposit', 'sale_transfer', 'reimbursement', 'convert_advance', 'return_capital'].includes(entry.kind) && !isPerson(entry.person))) {
     throw new Error('账本中有合伙人信息错误的记录。');
   }
-  if (['purchase', 'expense', 'purchase_refund'].includes(entry.kind) && !PURCHASE_SOURCES.has(entry.source)) {
+  if ((entry.source != null && !isPurchaseSource(entry.source)) ||
+      (['purchase', 'expense', 'purchase_refund'].includes(entry.kind) && !isPurchaseSource(entry.source))) {
     throw new Error('账本中有付款来源错误的记录。');
   }
-  if (entry.kind === 'supplier_payment' && !CASH_SOURCES.has(entry.source)) {
+  if (entry.kind === 'supplier_payment' && !isCashSource(entry.source)) {
     throw new Error('赊账还款的付款来源无效。');
   }
   if ((['purchase', 'expense'].includes(entry.kind) && entry.source === 'supplier_credit') || entry.kind === 'funding_to_supplier') {
@@ -130,7 +173,7 @@ function assertEntry(entry) {
   if (FUNDING_RESOLUTIONS.has(entry.kind) && (typeof entry.targetId !== 'string' || !entry.targetId)) {
     throw new Error('缺口归类缺少对应支出。');
   }
-  if (entry.kind === 'funding_to_person' && !PEOPLE.includes(entry.person)) {
+  if (entry.kind === 'funding_to_person' && !isPerson(entry.person)) {
     throw new Error('缺口归类的合伙人无效。');
   }
   if (entry.kind === 'funding_confirmed' && !['true_overdraft', 'receipt_fixed'].includes(entry.reason)) {
@@ -149,12 +192,12 @@ function assertEntry(entry) {
     throw new Error('关联的供应商赊账编号无效。');
   }
   if (entry.refundDisposition != null &&
-      (entry.kind !== 'purchase_refund' || !PEOPLE.includes(entry.source) ||
+      (entry.kind !== 'purchase_refund' || !isPerson(entry.source) ||
        !['person_receivable', 'advance_offset'].includes(entry.refundDisposition))) {
     throw new Error('个人退款处理方式无效。');
   }
   // Earlier v1 sale records had no source field and meant money already entered the vault.
-  if (entry.kind === 'sale' && entry.source != null && !CASH_SOURCES.has(entry.source)) {
+  if (entry.kind === 'sale' && entry.source != null && !isCashSource(entry.source)) {
     throw new Error('账本中有付款来源错误的记录。');
   }
   if (entry.kind === 'sale' && entry.costCents != null && !nonnegativeCents(entry.costCents)) {
@@ -210,25 +253,51 @@ function historicalCashAtOutflows(entries) {
 }
 
 export function normalizeLegacyFundingReviews(book) {
-  if (!book || book.version !== BOOK_VERSION || !Array.isArray(book.entries)) {
+  if (!book || ![1, BOOK_VERSION].includes(book.version) || !Array.isArray(book.entries)) {
     throw new Error('账本文件版本不匹配，不能直接导入。');
   }
   if (book.entries.length > 100_000) throw new Error('账本记录数量无效。');
   const next = structuredClone(book);
-  for (const entry of next.entries) assertEntry(entry);
+  const partnerStructureChanged = next.version !== BOOK_VERSION;
+  const people = peopleFromNames(next.settings?.names, next.version === 1);
+  // The old format only represented two named partners. Unknown v1 membership is
+  // rejected instead of silently reinterpreting an incompatible backup.
+  if (next.version === 1 && (people.length !== PEOPLE.length || PEOPLE.some(person => !people.includes(person)))) {
+    throw new Error('旧版账本的合伙人名单无效。');
+  }
+  const renamedLegacyPeople = [];
+  if (next.version === 1) {
+    const usedNames = new Set();
+    for (const person of people) {
+      const original = next.settings.names[person];
+      let name = original;
+      let suffixNumber = 2;
+      while (usedNames.has(name.trim().normalize('NFC'))) {
+        const suffix = `（${suffixNumber++}）`;
+        name = [...original.trim()].slice(0, 20 - [...suffix].length).join('') + suffix;
+      }
+      if (name !== original) {
+        next.settings.names[person] = name;
+        renamedLegacyPeople.push(person);
+      }
+      usedNames.add(name.trim().normalize('NFC'));
+    }
+  }
+  next.version = BOOK_VERSION;
+  for (const entry of next.entries) assertEntry(entry, people);
   const cashByEntryId = historicalCashAtOutflows(next.entries);
-  let changed = false;
+  let fundingReviewsChanged = false;
   for (const entry of next.entries) {
     if (entry.voidedAt || !REVIEWABLE_KINDS.has(entry.kind) || entry.source !== 'treasury') continue;
     const cashBefore = cashByEntryId.get(entry.id);
     const shortfall = Math.max(0, -(cashBefore - entry.amountCents)) - Math.max(0, -cashBefore);
     if (shortfall > 0 && entry.fundingReviewCents == null) {
       entry.fundingReviewCents = shortfall;
-      changed = true;
+      fundingReviewsChanged = true;
     }
   }
   assertBook(next);
-  return { book: next, changed };
+  return { book: next, changed: partnerStructureChanged || fundingReviewsChanged, partnerStructureChanged, fundingReviewsChanged, renamedLegacyPeople };
 }
 
 export function assertBook(book) {
@@ -239,17 +308,16 @@ export function assertBook(book) {
     throw new Error('账本修订号无效。');
   }
   if (!book.settings || typeof book.settings !== 'object' || !book.settings.names) throw new Error('账本设置不完整。');
-  for (const person of PEOPLE) {
-    const name = book.settings.names[person];
-    if (typeof name !== 'string' || name.trim().length < 1 || name.trim().length > 20) throw new Error('合伙人称呼无效。');
-  }
+  const people = getPeople(book);
+  const cashSources = ['treasury', ...people];
+  const purchaseSources = [...cashSources, 'supplier_credit'];
   if (!nonnegativeCents(book.settings.plannedPurchaseCents) || !nonnegativeCents(book.settings.reserveCents)) {
     throw new Error('计划进货或备用金金额无效。');
   }
   if (!Array.isArray(book.entries) || book.entries.length > 100_000) throw new Error('账本记录数量无效。');
   const ids = new Set();
   for (const entry of book.entries) {
-    assertEntry(entry);
+    assertEntry(entry, people);
     if (ids.has(entry.id)) throw new Error('账本中有重复记录。');
     ids.add(entry.id);
   }
@@ -290,8 +358,8 @@ export function assertBook(book) {
   const entryIndexById = new Map(book.entries.map((entry, index) => [entry.id, index]));
   const activeSales = new Map([...activeEntries].filter(([, entry]) => entry.kind === 'sale'));
   const supplementedSales = new Set();
-  const purchasesBySource = { treasury: 0, me: 0, partner: 0, supplier_credit: 0 };
-  const refundsBySource = { treasury: 0, me: 0, partner: 0, supplier_credit: 0 };
+  const purchasesBySource = zeroByPerson(purchaseSources);
+  const refundsBySource = zeroByPerson(purchaseSources);
   const resolvedByTarget = new Map();
   const usedReceipts = new Map();
   const creditEntries = new Map([...activeEntries].filter(([, entry]) =>
@@ -299,8 +367,8 @@ export function assertBook(book) {
   const creditBalances = new Map([...creditEntries].map(([id, entry]) => [id, {
     dueCents: entry.amountCents,
     refundedCents: 0,
-    paid: { treasury: 0, me: 0, partner: 0 },
-    refundedTo: { treasury: 0, me: 0, partner: 0 },
+    paid: zeroByPerson(cashSources),
+    refundedTo: zeroByPerson(cashSources),
   }]));
   for (const entry of book.entries) {
     if (entry.voidedAt) continue;
@@ -318,6 +386,13 @@ export function assertBook(book) {
       if (target.kind === 'purchase' && ['funding_to_person', 'funding_to_supplier'].includes(entry.kind)) {
         purchasesBySource.treasury -= entry.amountCents;
         purchasesBySource[entry.kind === 'funding_to_person' ? entry.person : 'supplier_credit'] += entry.amountCents;
+      }
+      if (target.kind === 'supplier_payment' && entry.kind === 'funding_to_person') {
+        const balance = creditBalances.get(target.creditId);
+        if (balance) {
+          balance.paid.treasury -= entry.amountCents;
+          balance.paid[entry.person] += entry.amountCents;
+        }
       }
       if (entry.kind === 'funding_confirmed' && entry.reason === 'receipt_fixed') {
         const receipt = activeEntries.get(entry.receiptId);
@@ -367,7 +442,14 @@ export function assertBook(book) {
   for (const [receiptId, usedCents] of usedReceipts) {
     if (usedCents > entryCashDelta(activeEntries.get(receiptId))) throw new Error('一笔入账不能重复核实超过自身的金额。');
   }
-  for (const source of PURCHASE_SOURCES) {
+  for (const balance of creditBalances.values()) {
+    for (const source of cashSources) {
+      if (balance.refundedTo[source] > balance.paid[source]) {
+        throw new Error('退到金库或个人的钱不能超过该账户已偿还的这笔赊账。');
+      }
+    }
+  }
+  for (const source of purchaseSources) {
     if (refundsBySource[source] > purchasesBySource[source]) {
       throw new Error('退货退款不能超过相同付款来源的有效进货金额。');
     }
@@ -376,19 +458,19 @@ export function assertBook(book) {
       (typeof book.lastBackupAt !== 'string' || !Number.isFinite(Date.parse(book.lastBackupAt)))) {
     throw new Error('账本备份时间无效。');
   }
-  const totals = summarize(book.entries);
+  const totals = summarize(book.entries, people);
   if (totals.cashCents < 0 && -totals.cashCents > totals.pendingFundingCents + totals.confirmedOverdraftCents) {
     throw new Error('金库余额不能小于零，除非透支支出已有对应的待核实或已确认明细。');
   }
   if (totals.inventoryCents < 0) throw new Error('已售、退货或报损的成本不能超过已记录的进货成本，请先补记进货。');
   if (totals.supplierPayableCents < 0) throw new Error('偿还供应商赊账不能超过待付款。');
-  for (const person of PEOPLE) {
+  for (const person of people) {
     if (totals.capitalCents[person] < 0) throw new Error('返还出资不能超过该人累计净出资。');
     if (totals.payableCents[person] < 0) throw new Error('报销或转出资不能超过该人的待报销金额。');
     if (totals.receivableCents[person] < 0) throw new Error('转入金额不能超过该人的待转入款。');
   }
-  const assets = totals.cashCents + totals.inventoryCents + totals.receivableCents.me + totals.receivableCents.partner;
-  const claims = totals.capitalCents.me + totals.capitalCents.partner + totals.payableCents.me + totals.payableCents.partner + totals.supplierPayableCents + totals.profitCents;
+  const assets = totals.cashCents + totals.inventoryCents + sumByPerson(totals.receivableCents, people);
+  const claims = sumByPerson(totals.capitalCents, people) + sumByPerson(totals.payableCents, people) + totals.supplierPayableCents + totals.profitCents;
   if (!Number.isSafeInteger(assets) || !Number.isSafeInteger(claims) || assets !== claims) {
     throw new Error('账本资产与出资、垫付和经营盈亏无法对平，请检查记录。');
   }
@@ -423,19 +505,20 @@ export function fundingCases(entries) {
   return [...cases.values()];
 }
 
-export function summarize(entries) {
+export function summarize(entries, people = PEOPLE) {
+  assertPeople(people);
   const result = {
     cashCents: 0,
-    capitalCents: { me: 0, partner: 0 },
-    payableCents: { me: 0, partner: 0 },
-    receivableCents: { me: 0, partner: 0 },
+    capitalCents: zeroByPerson(people),
+    payableCents: zeroByPerson(people),
+    receivableCents: zeroByPerson(people),
     supplierPayableCents: 0,
     pendingFundingCents: 0,
     pendingFundingCount: 0,
     confirmedOverdraftCents: 0,
-    personalAdvanceCents: { me: 0, partner: 0 },
-    reimbursedCents: { me: 0, partner: 0 },
-    convertedAdvanceCents: { me: 0, partner: 0 },
+    personalAdvanceCents: zeroByPerson(people),
+    reimbursedCents: zeroByPerson(people),
+    convertedAdvanceCents: zeroByPerson(people),
     depositsCents: 0,
     purchaseCents: 0,
     purchaseRefundCents: 0,
@@ -452,6 +535,7 @@ export function summarize(entries) {
   };
   const supplementedSales = new Set(entries.filter(entry => entry.kind === 'sale_cost' && !entry.voidedAt).map(entry => entry.saleId));
   for (const entry of entries) {
+    assertEntry(entry, people);
     if (entry.voidedAt) continue;
     const amount = entry.amountCents;
     result.activeCount++;
@@ -553,20 +637,22 @@ export function summarize(entries) {
 }
 
 export function fundingPlan(book) {
-  const totals = summarize(book.entries);
-  const me = totals.capitalCents.me;
-  const partner = totals.capitalCents.partner;
-  const lower = me < partner ? 'me' : partner < me ? 'partner' : null;
-  const equalizeCents = Math.abs(me - partner);
-  const payableTotalCents = totals.payableCents.me + totals.payableCents.partner;
-  const receivableTotalCents = totals.receivableCents.me + totals.receivableCents.partner;
+  const people = getPeople(book);
+  const totals = summarize(book.entries, people);
+  const highestCapitalCents = people.reduce((highest, person) => Math.max(highest, totals.capitalCents[person]), 0);
+  const equalizeByPersonCents = Object.fromEntries(people.map(person => [person, highestCapitalCents - totals.capitalCents[person]]));
+  const peopleToEqualize = people.filter(person => equalizeByPersonCents[person] > 0);
+  const lower = peopleToEqualize.length === 1 ? peopleToEqualize[0] : null;
+  const equalizeCents = sumByPerson(equalizeByPersonCents, people);
+  const payableTotalCents = sumByPerson(totals.payableCents, people);
+  const receivableTotalCents = sumByPerson(totals.receivableCents, people);
   const supplierPayableCents = totals.supplierPayableCents;
   const targetCents = book.settings.plannedPurchaseCents + book.settings.reserveCents + payableTotalCents + supplierPayableCents;
   const cashGapCents = Math.max(0, targetCents - totals.cashCents);
   const suggestedTransferCents = Math.min(receivableTotalCents, cashGapCents);
   const afterTransferGapCents = Math.max(0, cashGapCents - suggestedTransferCents);
   const afterEqualizeGapCents = Math.max(0, targetCents - totals.cashCents - suggestedTransferCents - equalizeCents);
-  const sharedTopUpCents = Math.ceil(afterEqualizeGapCents / 2);
+  const sharedTopUpCents = Math.ceil(afterEqualizeGapCents / people.length);
   return {
     targetCents,
     payableTotalCents,
@@ -576,12 +662,10 @@ export function fundingPlan(book) {
     suggestedTransferCents,
     afterTransferGapCents,
     equalizeCents,
+    equalizeByPersonCents,
     lower,
     sharedTopUpCents,
-    dueCents: {
-      me: sharedTopUpCents + (lower === 'me' ? equalizeCents : 0),
-      partner: sharedTopUpCents + (lower === 'partner' ? equalizeCents : 0),
-    },
+    dueCents: Object.fromEntries(people.map(person => [person, sharedTopUpCents + equalizeByPersonCents[person]])),
   };
 }
 
@@ -613,9 +697,11 @@ export function newEntry(kind, amountCents, options = {}) {
 
 export function addEntries(book, entries) {
   const next = structuredClone(book);
-  let cashCents = summarize(next.entries).cashCents;
+  const people = getPeople(next);
+  let cashCents = summarize(next.entries, people).cashCents;
   for (const sourceEntry of entries) {
     const entry = structuredClone(sourceEntry);
+    assertEntry(entry, people);
     if (['reimbursement', 'return_capital'].includes(entry.kind) && cashCents < entry.amountCents) {
       throw new Error('金库余额不能小于零；请先补足金库再报销或返还出资。');
     }
@@ -668,7 +754,18 @@ export function voidEntry(book, id) {
 
 export function updateSettings(book, settings) {
   const next = structuredClone(book);
-  next.settings = { ...next.settings, ...settings, names: { ...next.settings.names, ...(settings.names ?? {}) } };
+  next.settings = { ...next.settings, ...settings };
+  if (settings.names !== undefined) {
+    // A submitted dictionary is the complete roster, not a partial name patch.
+    next.settings.names = structuredClone(settings.names);
+    const nextPeople = getPeople(next);
+    for (const person of getPeople(book)) {
+      if (!nextPeople.includes(person) && personHasHistory(book, person)) {
+        throw new Error('已有记账历史的合伙人不能删除，可修改称呼；作废记录也需要保留归属。');
+      }
+    }
+    next.settings.names = Object.fromEntries(nextPeople.map(person => [person, next.settings.names[person].trim()]));
+  }
   return assertBook(next);
 }
 

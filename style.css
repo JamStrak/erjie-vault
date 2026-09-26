@@ -1029,6 +1029,28 @@ h2 { margin-bottom: 0; font-size: 20px; line-height: 1.35; letter-spacing: -.025
   .entry-icon { flex-basis: 32px; width: 32px; height: 32px; }
   .bottom-nav { padding-right: 8px; padding-left: 8px; }
 }
+
+/* A dynamic roster keeps the same compact cards and comfortable touch targets. */
+.partner-count { color: var(--muted); font-size: 13px; white-space: nowrap; }
+.partner-grid > :only-child, .need-grid > :only-child { grid-column: 1 / -1; }
+.partner-line { flex-wrap: wrap; }
+.partner-line b { margin-left: auto; min-width: 0; white-space: normal; }
+#more-partner-cards { margin-top: 8px; }
+#more-partners > summary::before { content: "+"; }
+#more-partners[open] > summary::before { content: "−"; }
+.partner-editor-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; margin: 4px 0 12px; }
+.partner-editor-heading h2 { margin: 0; font-size: 17px; }
+.partner-editor-heading small, .partner-recorded { color: var(--muted); font-size: 12px; }
+.partner-editor-row { display: flex; align-items: flex-end; gap: 10px; margin-bottom: 14px; }
+.partner-name-field { flex: 1; min-width: 0; }
+.partner-name-field label { display: block; margin-bottom: 6px; color: var(--muted); font-size: 13px; }
+.partner-name-field input { width: 100%; min-height: 46px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); color: var(--ink-strong); font-size: 16px; }
+.partner-name-field input:focus { outline: 2px solid var(--berry); outline-offset: 2px; }
+.remove-partner { flex: 0 0 56px; min-height: 46px; padding: 8px; border: 1px solid var(--line); border-radius: 12px; background: transparent; color: var(--berry-deep); font-size: 13px; }
+.remove-partner:disabled { opacity: .45; cursor: default; }
+.partner-recorded { flex: 0 0 56px; display: grid; align-items: center; min-height: 46px; text-align: center; }
+.add-partner { width: 100%; border-style: dashed; margin: 0 0 8px; }
+#partners-form > .primary-button { margin-top: 10px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
 }

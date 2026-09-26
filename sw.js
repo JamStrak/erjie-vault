@@ -1,5 +1,5 @@
-const CACHE_PREFIX = 'erjie-vault-static-';
-const CACHE_NAME = `${CACHE_PREFIX}v12`;
+const CACHE_PREFIX = 'erjie-vault-multi-static-';
+const CACHE_NAME = `${CACHE_PREFIX}v1`;
 const ASSETS = ['./', './index.html', './style.css', './app.js', './ledger.js', './theme.js', './icon.svg', './icon-berry.svg', './icon.png', './manifest.webmanifest'];
 
 self.addEventListener('install', event => {
